@@ -1,1 +1,1 @@
-export type GamePhase = "deploy" | "attack" | "fortify"
+export type GamePhase = 'deploy' | 'attack' | 'fortify'

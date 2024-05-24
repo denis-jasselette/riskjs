@@ -1,7 +1,9 @@
+import '@/index.module.scss'
+
 import { render } from 'preact'
-import { App } from './App.tsx'
-import './index.module.scss'
 import ReactModal from 'react-modal'
+
+import { App } from '@/App.tsx'
 
 ReactModal.setAppElement('#app')
 

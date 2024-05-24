@@ -1,5 +1,5 @@
-import GameState from "@/models/GameState"
-import TroopState from "@/models/TroopState"
+import GameState from '@/models/GameState'
+import TroopState from '@/models/TroopState'
 
 export default class GameController {
   gameState: GameState
@@ -21,16 +21,16 @@ export default class GameController {
     if (this.isTerritoryBlizzard(territory))
       return false
     if (this.gameState.currentPlayer !== this.gameState.userPlayer)
-      return false;
+      return false
     if (selectedTerritory === territory)
-      return true;
+      return true
 
     const owner = this.getTerritoryOwner(territory)
-    if (this.gameState.currentPhase === "deploy")
+    if (this.gameState.currentPhase === 'deploy')
       return owner === this.gameState.currentPlayer
-    if (this.gameState.currentPhase === "fortify")
+    if (this.gameState.currentPhase === 'fortify')
       return owner === this.gameState.currentPlayer && (!selectedTerritory || this.areTerritoriesConnected(selectedTerritory, territory))
-    if (this.gameState.currentPhase === "attack") {
+    if (this.gameState.currentPhase === 'attack') {
       if (!selectedTerritory)
         return owner === this.gameState.currentPlayer
       else
@@ -54,17 +54,17 @@ export default class GameController {
   }
 
   getTroopState(territory: string): TroopState | undefined {
-    return this.gameState.troops.find((x) => x.territory === territory)
+    return this.gameState.troops.find(x => x.territory === territory)
   }
 
   getContinentOwner(continent: string): string | undefined {
     const continentTerritories = this.getContinentTerritories(continent)
-    const owners = continentTerritories.map((x) => this.getTerritoryOwner(x))
+    const owners = continentTerritories.map(x => this.getTerritoryOwner(x))
     if (owners.length === 0)
       return undefined
 
     const continentOwnerCandidate = owners[0]
-    if (owners.every((x) => x === continentOwnerCandidate))
+    if (owners.every(x => x === continentOwnerCandidate))
       return continentOwnerCandidate
 
     return undefined

@@ -1,7 +1,7 @@
-import TroopState from "./TroopState";
-import MapConfig from "./MapConfig";
-import PlayerConfig from "./PlayerConfig";
-import { GamePhase } from "./GamePhase";
+import { GamePhase } from '@/models/GamePhase'
+import MapConfig from '@/models/MapConfig'
+import PlayerConfig from '@/models/PlayerConfig'
+import TroopState from '@/models/TroopState'
 
 export default class GameState {
   gameOver: boolean
@@ -14,8 +14,8 @@ export default class GameState {
   currentPhase: GamePhase
 
   /* TODO */
-  portals?: any
-  fog?: any
+  portals?: string[]
+  fog?: string[]
 
   constructor() {
     this.gameOver = true
@@ -23,8 +23,8 @@ export default class GameState {
     this.playerConfigs = []
     this.troops = []
     this.blizzards = []
-    this.userPlayer = ""
-    this.currentPlayer = ""
-    this.currentPhase = "deploy"
+    this.userPlayer = ''
+    this.currentPlayer = ''
+    this.currentPhase = 'deploy'
   }
 }

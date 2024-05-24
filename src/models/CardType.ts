@@ -1,1 +1,1 @@
-export type CardType = "infantry" | "cavalry" | "artillery" | "wildcard"
+export type CardType = 'infantry' | 'cavalry' | 'artillery' | 'wildcard'

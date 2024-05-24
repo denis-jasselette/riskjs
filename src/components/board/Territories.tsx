@@ -1,15 +1,16 @@
-import GameController from '@/controllers/GameController';
-import { useContext } from 'preact/hooks';
-import GameContext from '@/components/GameContext';
-import Territory from './Territory';
-import TerritoryConfig from '@/models/TerritoryConfig';
+import { useContext } from 'preact/hooks'
+
+import Territory from '@/components/board/Territory'
+import GameContext from '@/components/GameContext'
+import GameController from '@/controllers/GameController'
+import TerritoryConfig from '@/models/TerritoryConfig'
 
 export interface TerritoriesComponentProps {
   selectedTerritory?: string
   handleClick?: (territory: string) => void
 }
 
-export default (props: TerritoriesComponentProps) => {
+const Territories = (props: TerritoriesComponentProps) => {
   const { gameState } = useContext(GameContext)
   const gameController = new GameController(gameState)
 
@@ -24,22 +25,29 @@ export default (props: TerritoriesComponentProps) => {
   const entries = Object.entries(gameState.mapConfig.territories)
     .sort((a: [string, TerritoryConfig], b: [string, TerritoryConfig]) => compareFn(a[0], b[0]))
 
-  return <>
-    {entries.map(([territory, territoryConfig]) => {
-      const troopState = gameController.getTroopState(territory)
-      const isBlizzard = gameController.isTerritoryBlizzard(territory)
-      const isSelected = territory === props.selectedTerritory
-      return <Territory
-        key={territory}
-        territory={territory}
-        territoryConfig={territoryConfig}
-        troopSize={gameState.mapConfig.troopSize}
-        owner={gameController.getTerritoryOwner(territory)}
-        troopState={troopState}
-        isBlizzard={isBlizzard}
-        isSelected={isSelected}
-        isSelectable={gameController.isSelectable(territory)}
-        handleClick={props.handleClick} />
-    })}
-  </>;
-};
+  return (
+    <>
+      {entries.map(([territory, territoryConfig]) => {
+        const troopState = gameController.getTroopState(territory)
+        const isBlizzard = gameController.isTerritoryBlizzard(territory)
+        const isSelected = territory === props.selectedTerritory
+        return (
+          <Territory
+            key={territory}
+            territory={territory}
+            territoryConfig={territoryConfig}
+            troopSize={gameState.mapConfig.troopSize}
+            owner={gameController.getTerritoryOwner(territory)}
+            troopState={troopState}
+            isBlizzard={isBlizzard}
+            isSelected={isSelected}
+            isSelectable={gameController.isSelectable(territory)}
+            handleClick={props.handleClick}
+          />
+        )
+      })}
+    </>
+  )
+}
+
+export default Territories

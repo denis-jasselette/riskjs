@@ -1,8 +1,12 @@
 import Map from '@/components/board/Map'
-import style from './Game.module.scss'
-import PlayerStatus from './playerStatus/PlayerStatus'
+import style from '@/components/Game.module.scss'
+import PlayerStatus from '@/components/playerStatus/PlayerStatus'
 
-export default () => <div class={style.Game}>
-  <PlayerStatus />
-  <Map class={style.GameMap} />
-</div>
+const Game = () => (
+  <div className={style.Game}>
+    <PlayerStatus />
+    <Map class={style.GameMap} />
+  </div>
+)
+
+export default Game

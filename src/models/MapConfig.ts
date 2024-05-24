@@ -1,19 +1,21 @@
-import { CardType } from "./CardType"
-import TerritoryConfig from "./TerritoryConfig"
+import { CardType } from '@/models/CardType'
+import TerritoryConfig from '@/models/TerritoryConfig'
 
 export default class MapConfig {
   width: number
   height: number
   troopSize: number
   continents: Record<string, {
-    bonusTroops: number,
-    path: string,
+    bonusTroops: number
+    path: string
   }>
+
   territories: Record<string, TerritoryConfig>
   cards: {
-    wildcards: number,
+    wildcards: number
     territories: Record<string, CardType>
   }
+
   blizzards: number
 
   constructor() {
@@ -24,7 +26,7 @@ export default class MapConfig {
     this.territories = {}
     this.cards = {
       wildcards: 0,
-      territories: {}
+      territories: {},
     }
     this.blizzards = 0
   }

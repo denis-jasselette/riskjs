@@ -1,4 +1,4 @@
-import PlayerConfig from "./PlayerConfig";
+import PlayerConfig from '@/models/PlayerConfig'
 
 export default interface TroopState {
   territory: string
