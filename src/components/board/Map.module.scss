@@ -1,0 +1,93 @@
+@use 'sass:color';
+@use 'sass:map';
+
+$troop-colors: (
+  'white': #beb6b6,
+  'black': #333333,
+  'red': #e40a1c,
+  'green': #3ca73c,
+  'blue': #3636e4,
+  'purple': purple,
+  'pink': #ff00aa,
+  'orange': #f07a0b,
+  'yellow': #e9b025
+);
+
+.Bridges {
+  // filter: drop-shadow(rgba(0, 0, 0, 0.4) 1px 1px 0);
+
+  .BridgeEnd {
+    path {
+      fill: #fff;
+      stroke: #fff;
+      stroke-width: 5;
+    }
+
+    circle {
+      paint-order: stroke;
+      fill: #fff;
+      stroke: #000;
+      stroke-width: 3;
+    }
+  }
+
+  .BridgeEdge {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 1.5;
+    stroke-dasharray: 4;
+    filter: drop-shadow(rgba(0, 0, 0, 0.4) 1px 1px 0);
+  }
+}
+
+.TerritoryEdge {
+  cursor: pointer;
+  paint-order: fill;
+  fill: url(#BlizzardGradient);
+  stroke: #000;
+  stroke-width: 1;
+  stroke-miterlimit: 4.32165;
+  transition: stroke .2s, fill .2s;
+
+  &[data-selected=true] {
+    paint-order: stroke;
+    stroke: #fff;
+    stroke-width: 2;
+  }
+  
+  @each $key, $color in $troop-colors {
+    &[data-player="#{$key}"] {
+      fill: lighten($color, 10%);
+
+      &[data-selectable=true]:hover {
+        fill: lighten($color, 25%);
+      }
+    }
+  }
+
+  .BlizzardIcon {
+    $color: #e2e2e2;
+    stroke-width: 20;
+    stroke-dasharray: none;
+    fill: #f5f5f5;
+    stroke: darken($color, 40%);
+    filter: drop-shadow(12px 24px 6px #{darken($color, 70%)});
+
+    path {
+      transform: scale(.8, .6) rotate(8deg) translate(100px, 10px);
+    }
+  }
+}
+
+.ContinentEdge {
+  paint-order: stroke;
+  fill: #fff;
+  stroke: #000;
+  stroke-width: 8;
+  
+  @each $key, $color in $troop-colors {
+    &[data-player="#{$key}"] {
+      stroke: lighten($color, 10%);
+    }
+  }
+}

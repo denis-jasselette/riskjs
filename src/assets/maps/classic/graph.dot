@@ -1,0 +1,156 @@
+graph RiskMap {
+  subgraph cluster_NorthAmerica {
+    label = "North America";
+    Alaska;
+    NorthwestTerritory [label = "North West Territory";];
+    Greenland;
+    Alberta;
+    Ontario;
+    Quebec;
+    WesternUnitedStates [label = "Western United States";];
+    EasternUnitedStates [label = "Eastern United States";];
+    CentralAmerica [label = "Central America";];
+  }
+  
+  subgraph cluster_SouthAmerica {
+    label = "South America";
+    Venezuela;
+    Peru;
+    Brazil;
+    Argentina;
+  }
+  
+  subgraph cluster_Europe {
+    label = "Europe";
+    Iceland;
+    Scandinavia;
+    GreatBritain [label = "Great Britain";];
+    NorthernEurope [label = "Northern Europe";];
+    Ukraine;
+    WesternEurope [label = "Western Europe";];
+    SouthernEurope [label = "Southern Europe";];
+  }
+  
+  subgraph cluster_Africa {
+    label = "Africa";
+    NorthAfrica [label = "North Africa";];
+    Egypt;
+    Congo;
+    EastAfrica [label = "East Africa";];
+    SouthAfrica [label = "South Africa";];
+    Madagascar;
+  }
+  
+  subgraph cluster_Asia {
+    label = "Asia";
+    Ural;
+    Siberia;
+    Yakutsk;
+    Kamchatka;
+    Irkutsk;
+    Afghanistan;
+    China;
+    Mongolia;
+    Japan;
+    MiddleEast [label = "Middle East";];
+    India;
+    Siam;
+  }
+  
+  subgraph cluster_Australia {
+    label = "Australia";
+    Indonesia;
+    NewGuinea [label = "New Guinea";];
+    WesternAustralia [label = "Western Australia";];
+    EasternAustralia [label = "Eastern Australia";];
+  }
+  
+  Alaska -- NorthwestTerritory;
+  Alaska -- Alberta;
+  Alaska -- Kamchatka;
+  NorthwestTerritory -- Greenland;
+  NorthwestTerritory -- Alberta;
+  NorthwestTerritory -- Ontario;
+  Greenland -- Iceland;
+  Greenland -- Quebec;
+  Alberta -- Ontario;
+  Alberta -- WesternUnitedStates;
+  Ontario -- EasternUnitedStates;
+  Ontario -- Quebec;
+  Quebec -- EasternUnitedStates;
+  WesternUnitedStates -- CentralAmerica;
+  WesternUnitedStates -- EasternUnitedStates;
+  EasternUnitedStates -- CentralAmerica;
+  CentralAmerica -- Venezuela;
+  Ontario -- Greenland;
+  Ontario -- WesternUnitedStates;
+  
+  Venezuela -- Peru;
+  Venezuela -- Brazil;
+  Peru -- Brazil;
+  Peru -- Argentina;
+  Brazil -- Argentina;
+  Brazil -- NorthAfrica;
+  
+  Iceland -- Scandinavia;
+  Iceland -- GreatBritain;
+  GreatBritain -- Scandinavia;
+  GreatBritain -- NorthernEurope;
+  GreatBritain -- WesternEurope;
+  Scandinavia -- NorthernEurope;
+  Scandinavia -- Ukraine;
+  NorthernEurope -- WesternEurope;
+  NorthernEurope -- SouthernEurope;
+  Ukraine -- SouthernEurope;
+  NorthernEurope -- Ukraine;
+  WesternEurope -- SouthernEurope;
+  
+  WesternEurope -- NorthAfrica;
+  SouthernEurope -- NorthAfrica;
+  SouthernEurope -- Egypt;
+  SouthernEurope -- MiddleEast;
+  MiddleEast -- Egypt;
+  MiddleEast -- EastAfrica;
+  NorthAfrica -- Egypt;
+  NorthAfrica -- EastAfrica;
+  NorthAfrica -- Congo;
+  EastAfrica -- Egypt;
+  EastAfrica -- Congo;
+  EastAfrica -- SouthAfrica;
+  Congo -- SouthAfrica;
+  EastAfrica -- Madagascar;
+  SouthAfrica -- Madagascar;
+  
+  Ukraine -- Ural;
+  Ukraine -- Afghanistan;
+  Ukraine -- MiddleEast;
+  Ural -- Siberia;
+  Ural -- China;
+  Siberia -- Yakutsk;
+  Siberia -- Irkutsk;
+  Siberia -- Mongolia;
+  Yakutsk -- Irkutsk;
+  Yakutsk -- Kamchatka;
+  Irkutsk -- Mongolia;
+  Irkutsk -- Kamchatka;
+  Mongolia -- Kamchatka;
+  Afghanistan -- China;
+  Afghanistan -- Ural;
+  Afghanistan -- MiddleEast;
+  Afghanistan -- India;
+  MiddleEast -- India;
+  India -- Siam;
+  India -- China;
+  China -- Mongolia;
+  China -- Siberia;
+  China -- Siam;
+  Siam -- Indonesia;
+  Kamchatka -- Japan;
+  Mongolia -- Japan;
+  
+  Indonesia -- NewGuinea;
+  Indonesia -- WesternAustralia;
+  NewGuinea -- WesternAustralia;
+  NewGuinea -- EasternAustralia;
+  WesternAustralia -- EasternAustralia;
+}

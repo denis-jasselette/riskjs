@@ -1,0 +1,98 @@
+@use 'sass:color';
+@use 'sass:map';
+
+$troop-colors: (
+  'white': #beb6b6,
+  'black': #333333,
+  'red': #e40a1c,
+  'green': #3ca73c,
+  'blue': #3636e4,
+  'purple': purple,
+  'pink': #ff00aa,
+  'orange': #f07a0b,
+  'yellow': #e9b025
+);
+
+.PlayerInfo {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2em;
+  padding: .5em;
+  
+  border-radius: 0 20px 20px 0;
+  border: 1px solid #5c5c5c;
+  border-left: none;
+  background-color: #2f2f2f;
+  box-shadow: 0px 5px 10px 5px rgba(0, 0, 0, .7);
+  transition: border .2s;
+
+  &[data-is-current-player=true] {
+    border-width: 2px;
+    border-color: var(--primary-color);
+  }
+
+  @each $key, $color in $troop-colors {
+    &[data-player="#{$key}"] .PlayerInfoAvatar svg path {
+      fill: $color;
+      paint-order: stroke fill;
+      stroke-width: 8%;
+      stroke: var(--text-color);
+      transform-origin: 50% 50%;
+      transform: scale(.9)
+    }
+  }
+
+  .PlayerInfoAvatar {
+    position: relative;
+    width: 32px;
+    height: 100%;
+  }
+
+  .PlayerInfoUser {
+    display: none;
+  }
+
+  &[data-is-user-player=true] .PlayerInfoUser {
+    display: block;
+    position: absolute;
+    bottom: 0;
+    text-align: center;
+    width: 100%;
+  }
+
+  .PlayerInfoAvatarLost, .PlayerInfoAvatarHuman, .PlayerInfoAvatarBot {
+    transition: opacity 2s;
+    width: 32px;
+    opacity: 0;
+    position: absolute;
+    top: 16px;
+  }
+  &[data-has-player-lost=true] {
+    .PlayerInfoAvatarLost {
+      opacity: 1;
+    }
+  }
+  &[data-has-player-lost=false] {
+    &[data-human-player=true] .PlayerInfoAvatarHuman {
+      opacity: 1;
+    }
+    &[data-human-player=false] .PlayerInfoAvatarBot {
+      opacity: 1;
+    }
+  }
+
+  &Stats {
+    margin-left: 10px;
+  }
+
+  &Troops, &Territories, &Cards, &Misc {
+    display: flex;
+    gap: .5em;
+    align-items: center;
+
+    svg {
+      width: 16px;
+      fill: var(--text-color);
+    }
+  }
+}
