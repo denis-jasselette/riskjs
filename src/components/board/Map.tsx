@@ -13,17 +13,35 @@ export type MapProps = {
 
 const Map = (props: MapProps) => {
   const [selectedTerritory, setSelectedTerritory] = useState<string | undefined>(undefined)
-  const { gameState } = useContext(GameContext)
+  const { gameState, setGameState } = useContext(GameContext)
   const gameController = new GameController(gameState)
 
   const handleClick = (territory: string) => {
-    if (!gameController.isSelectable(territory))
+    if (!gameController.isSelectable(territory, selectedTerritory))
       return
 
-    if (selectedTerritory === territory)
+    if (gameState.currentPhase === 'deploy') {
+      setGameState(gameController.deploy(gameState.troopsToDeploy, territory).gameState)
+      return
+    }
+    if (selectedTerritory === territory) {
       setSelectedTerritory(undefined)
-    else
+      return
+    }
+    if (!selectedTerritory) {
       setSelectedTerritory(territory)
+      return
+    }
+    if (gameState.currentPhase === 'attack') {
+      setGameState(gameController.attack(1, selectedTerritory, territory).gameState)
+      setSelectedTerritory(territory)
+      return
+    }
+    if (gameState.currentPhase === 'fortify') {
+      setGameState(gameController.fortify(1, selectedTerritory, territory).gameState)
+      setSelectedTerritory(undefined)
+      return
+    }
   }
 
   return (

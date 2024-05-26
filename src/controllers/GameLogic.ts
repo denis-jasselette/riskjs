@@ -1,3 +1,4 @@
+import GameController from '@/controllers/GameController'
 import { distribute, shuffle } from '@/lib/Random'
 import GameState from '@/models/GameState'
 import MapConfig from '@/models/MapConfig'
@@ -53,11 +54,11 @@ export default class GameLogic {
     return [troops, blizzards]
   }
 
-  static initState(mapConfig: MapConfig, playerConfigs: PlayerConfig[], blizzardsEnabled: boolean): GameState {
+  static initState(mapConfig: MapConfig, playerConfigs: PlayerConfig[], blizzardsEnabled: boolean, gameOver: boolean = false): GameState {
     const [troops, blizzards] = this.autoSetupTroops(mapConfig, playerConfigs, blizzardsEnabled)
 
-    return {
-      gameOver: false,
+    const state: GameState = {
+      gameOver: gameOver,
       mapConfig: mapConfig,
       playerConfigs: playerConfigs,
       troops: troops,
@@ -65,7 +66,12 @@ export default class GameLogic {
       userPlayer: playerConfigs[0].color,
       currentPlayer: playerConfigs[0].color,
       currentPhase: 'deploy',
+      troopsToDeploy: 0,
     }
+    if (gameOver)
+      return state
+
+    return new GameController(state).startPlayerTurn(playerConfigs[0].color).gameState
   }
 
   static defaultGameState(mapConfig: MapConfig): GameState {
@@ -78,8 +84,7 @@ export default class GameLogic {
       { currentUser: false, name: 'Fabien', color: 'purple', human: true, position: 6 },
     ]
 
-    const state = this.initState(mapConfig, playerConfigs, false)
-    state.gameOver = true
+    const state = this.initState(mapConfig, playerConfigs, false, true)
     return state
   }
 }

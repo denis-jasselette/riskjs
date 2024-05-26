@@ -26,7 +26,7 @@ export function App() {
         currentUser: false, name: color, color: color, human: true, position: i + 1,
       })
     }
-    setGameState(GameLogic.initState(mapConfig, playerConfigs, blizzards))
+    setGameState(GameLogic.initState(mapConfig, playerConfigs, blizzards, false))
   }
 
   return (

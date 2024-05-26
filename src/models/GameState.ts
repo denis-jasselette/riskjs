@@ -16,6 +16,7 @@ export default class GameState {
   /* TODO */
   portals?: string[]
   fog?: string[]
+  troopsToDeploy: number
 
   constructor() {
     this.gameOver = true
@@ -26,5 +27,6 @@ export default class GameState {
     this.userPlayer = ''
     this.currentPlayer = ''
     this.currentPhase = 'deploy'
+    this.troopsToDeploy = 0
   }
 }
