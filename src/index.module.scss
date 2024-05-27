@@ -65,14 +65,20 @@ h1 {
 
 input, select, button, :global(.btn) {
   border: 1px solid transparent;
-  transition: border-color background-color 0.25s;
+  transition: border-color 0.25s, background-color 0.25s;
 
-  &:hover {
-    border-color: var(--primary-color);
+  &:disabled {
+    cursor: not-allowed;
   }
-  &:focus,
-  &:focus-visible {
-    outline: 4px auto -webkit-focus-ring-color;
+
+  &:enabled {
+    &:hover {
+      border-color: var(--primary-color);
+    }
+    &:focus,
+    &:focus-visible {
+      outline: 4px auto -webkit-focus-ring-color;
+    }
   }
 }
 
