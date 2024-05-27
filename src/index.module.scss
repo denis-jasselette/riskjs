@@ -2,24 +2,6 @@
 @use '@/theme/fonts';
 
 :root {
-  --text-color: #{colors.$dark-text-color};
-  --text-contrast-color: #{colors.$dark-text-contrast-color};
-  --background-color: #{colors.$dark-background-color};
-  --primary-color: #{colors.$dark-primary-color};
-  --active-primary-color: #{colors.$dark-active-primary-color};
-
-  @media (prefers-color-scheme: light) {
-    --text-color: #{colors.$light-text-color};
-    --text-contrast-color: #{colors.$light-text-contrast-color};
-    --background-color: #{colors.$light-background-color};
-    --primary-color: #{colors.$light-primary-color};
-    --active-primary-color: #{colors.$light-active-primary-color};
-  }
-
-  color-scheme: light dark;
-  color: var(--text-color);
-  background-color: var(--background-color);
-
   font-family: fonts.$main-font-family;
   line-height: 1.5;
   font-weight: 400;
