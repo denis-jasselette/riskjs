@@ -33,6 +33,10 @@ const Map = (props: MapProps) => {
       return
     }
     if (gameState.currentPhase === 'attack') {
+      if (gameController.getTerritoryOwner(territory) === gameState.currentPlayer) {
+        setSelectedTerritory(territory)
+        return
+      }
       setGameState(gameController.attack(1, selectedTerritory, territory).gameState)
       setSelectedTerritory(territory)
       return

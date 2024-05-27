@@ -32,10 +32,10 @@ export default class GameController {
     if (this.gameState.currentPhase === 'fortify')
       return owner === this.gameState.currentPlayer && (!selectedTerritory || this.areTerritoriesConnected(selectedTerritory, territory))
     if (this.gameState.currentPhase === 'attack') {
-      if (!selectedTerritory)
-        return owner === this.gameState.currentPlayer
-      else
-        return owner !== this.gameState.currentPlayer && this.areTerritoriesAdjacent(selectedTerritory, territory)
+      if (owner === this.gameState.currentPlayer)
+        return true
+
+      return !!selectedTerritory && this.areTerritoriesAdjacent(selectedTerritory, territory)
     }
     return false
   }
