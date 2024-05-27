@@ -33,7 +33,9 @@ $light-modal-background-color: #ffffff;
     --modal-background-color: #{$light-modal-background-color};
   }
 
-  color-scheme: light dark;
+  color-scheme: dark;
+  // Uncomment the following line to enable light mode (disabled because not well tested)
+  // color-scheme: light dark;
   color: var(--text-color);
   background-color: var(--background-color);
 }
