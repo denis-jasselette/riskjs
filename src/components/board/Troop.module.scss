@@ -1,17 +1,7 @@
 @use 'sass:color';
 @use 'sass:map';
-
-$troop-colors: (
-  'white': #beb6b6,
-  'black': #333333,
-  'red': #e40a1c,
-  'green': #3ca73c,
-  'blue': #3636e4,
-  'purple': purple,
-  'pink': #ff00aa,
-  'orange': #f07a0b,
-  'yellow': #e9b025
-);
+@use '@/theme/colors';
+@use '@/theme/fonts';
 
 .Troop {
   pointer-events: none;
@@ -25,7 +15,7 @@ $troop-colors: (
     paint-order: stroke;
     stroke-width: 15px;
     stroke-linejoin: round;
-    font-family: "Lilita One", sans-serif;
+    font-family: fonts.$troop-font-family;
     font-size: 4em;
     font-weight: 800;
   }
@@ -37,7 +27,7 @@ $troop-colors: (
     fill: black;
   }
 
-  @each $key, $color in $troop-colors {
+  @each $key, $color in colors.$troop-colors {
     &[data-player-color="#{$key}"] ellipse {
       stroke-width: 2;
       stroke-dasharray: none;

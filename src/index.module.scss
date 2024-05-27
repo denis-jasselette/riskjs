@@ -1,31 +1,28 @@
-@import url('https://fonts.googleapis.com/css2?family=Lilita+One&display=swap');
+@use '@/theme/colors';
+@use '@/theme/fonts';
 
 :root {
-  --dark-text-color: rgba(255, 255, 255, 0.87);
-  --dark-text-contrast-color: #1a1a1a;
-  --dark-background-color: #242424;
-  --dark-primary-color: #646cff;
-  --dark-active-primary-color: #535bf2;
+  --text-color: #{colors.$dark-text-color};
+  --text-contrast-color: #{colors.$dark-text-contrast-color};
+  --background-color: #{colors.$dark-background-color};
+  --primary-color: #{colors.$dark-primary-color};
+  --active-primary-color: #{colors.$dark-active-primary-color};
 
-  --light-text-color: #213547;
-  --light-text-contrast-color: #e2e2e2;
-  --light-background-color: #bab5cf;
-  --light-primary-color: #646cff;
-  --light-active-primary-color: #747bff;
-
-  --text-color: var(--dark-text-color);
-  --text-contrast-color: var(--dark-text-contrast-color);
-  --background-color: var(--dark-background-color);
-  --primary-color: var(--dark-primary-color);
-  --active-primary-color: var(--dark-active-primary-color);
-
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  @media (prefers-color-scheme: light) {
+    --text-color: #{colors.$light-text-color};
+    --text-contrast-color: #{colors.$light-text-contrast-color};
+    --background-color: #{colors.$light-background-color};
+    --primary-color: #{colors.$light-primary-color};
+    --active-primary-color: #{colors.$light-active-primary-color};
+  }
 
   color-scheme: light dark;
   color: var(--text-color);
   background-color: var(--background-color);
+
+  font-family: fonts.$main-font-family;
+  line-height: 1.5;
+  font-weight: 400;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -38,30 +35,19 @@
   user-select: none;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --text-color: var(--light-text-color);
-    --text-contrast-color: var(--light-text-contrast-color);
-    --background-color: var(--light-background-color);
-    --primary-color: var(--light-primary-color);
-    --active-primary-color: var(--light-active-primary-color);
-  }
-}
-
 html {
   width: 100%;
   height: 100%;
-  box-sizing: border-box;
 }
 
 body {
-  margin: 0;
   width: 100%;
   height: 100%;
+  margin: 0;
 }
 
 *, *:before, *:after {
-  box-sizing: inherit;
+  box-sizing: border-box;
 }
 
 a {

@@ -1,22 +1,11 @@
 @use 'sass:color';
 @use 'sass:map';
-
-$troop-colors: (
-  'white': #beb6b6,
-  'black': #333333,
-  'red': #e40a1c,
-  'green': #3ca73c,
-  'blue': #3636e4,
-  'purple': purple,
-  'pink': #ff00aa,
-  'orange': #f07a0b,
-  'yellow': #e9b025
-);
+@use '@/theme/colors';
 
 .Avatar {
   width: 32px;
 
-  @each $key, $color in $troop-colors {
+  @each $key, $color in colors.$troop-colors {
     &[data-player="#{$key}"] svg path {
       fill: $color;
       paint-order: stroke fill;
