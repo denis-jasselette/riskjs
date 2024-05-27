@@ -17,21 +17,27 @@ const ActionMenu = (props: ActionMenuProps) => {
     return <></>
 
   return (
-    <div className={style.ActionMenu}>
-      <Avatar
-        player={currentPlayerConfig.color}
-        isHumanPlayer={currentPlayerConfig.human}
-        hasPlayerLost={false}
-      />
+    <div className={style.ActionMenuContainer}>
+      <div className={style.ActionMenu}>
+        <div className={style.Avatar}>
+          <Avatar
+            player={currentPlayerConfig.color}
+            isHumanPlayer={currentPlayerConfig.human}
+            hasPlayerLost={false}
+          />
+        </div>
 
-      <PhaseIndicator
-        currentPhase={gameState.currentPhase}
-      />
+        <div className={style.PhaseIndicator}>
+          <PhaseIndicator
+            currentPhase={gameState.currentPhase}
+            troopsToDeploy={gameState.troopsToDeploy}
+          />
+        </div>
 
-      <PhaseEndButton currentPhase={gameState.currentPhase} handleClick={props.handleEndPhase} />
-
-      {gameState.currentPhase === 'deploy'
-      && <>{gameState.troopsToDeploy}</>}
+        <div className={style.PhaseEndButton}>
+          <PhaseEndButton currentPhase={gameState.currentPhase} handleClick={props.handleEndPhase} />
+        </div>
+      </div>
     </div>
   )
 }

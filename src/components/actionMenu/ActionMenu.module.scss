@@ -1,5 +1,45 @@
-.ActionMenu {
+.ActionMenuContainer {
   position: fixed;
-  top: 0;
-  left: 50%;
+  bottom: 20px;
+  right: 20px;
+
+  .ActionMenu {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
+
+    padding: 10px;
+    border-radius: 20px;
+    border: 1px solid var(--modal-border-color);
+    background-color: var(--modal-background-color);
+    box-shadow: 0px 5px 10px 5px rgba(0, 0, 0, .7);
+    outline: none;
+  }
+}
+
+.Avatar, .PhaseIndicator, .PhaseEndButton {
+  flex: 0;
+  white-space: nowrap;
+}
+
+.PhaseIndicator {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  &Phase {
+    opacity: .5;
+    border-bottom: 3px solid #fff;
+    transition: opacity .5s, border-color .5s;
+  }
+  &PhaseActive {
+    opacity: 1;
+    border-color: var(--primary-color);
+  }
+}
+
+.PhaseEndButton {
+  button {
+    width: 13em;
+  }
 }

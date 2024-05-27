@@ -21,7 +21,7 @@ const PhaseEndButton = (props: PhaseEndButtonProps) => {
   if (gameState.currentPhase === 'deploy')
     return (
       <button disabled={true}>
-        Deploy all your troops
+        Deploy your troops
       </button>
     )
 
