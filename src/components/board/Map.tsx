@@ -37,7 +37,8 @@ const Map = (props: MapProps) => {
         setSelectedTerritory(territory)
         return
       }
-      setGameState(gameController.attack(1, selectedTerritory, territory).gameState)
+      const attackingTroops = gameController.getTroopCount(selectedTerritory) - 1;
+      setGameState(gameController.attack(attackingTroops, selectedTerritory, territory).gameState)
       setSelectedTerritory(territory)
       return
     }

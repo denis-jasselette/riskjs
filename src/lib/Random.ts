@@ -26,3 +26,7 @@ export function distribute(total: number, bucketCount: number): number[] {
 
   return buckets
 }
+
+export function diceRoll() {
+  return randInt(1, 6)
+}
