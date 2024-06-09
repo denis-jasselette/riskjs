@@ -28,8 +28,8 @@ const Territories = (props: TerritoriesComponentProps) => {
   return (
     <>
       {entries.map(([territory, territoryConfig]) => {
-        const troopState = gameController.getTroopState(territory)
-        const isBlizzard = gameController.isTerritoryBlizzard(territory)
+        const troopState = gameController.mapController.getTroopState(territory)
+        const isBlizzard = gameController.mapController.isTerritoryBlizzard(territory)
         const isSelected = territory === props.selectedTerritory
         return (
           <Territory
@@ -37,11 +37,11 @@ const Territories = (props: TerritoriesComponentProps) => {
             territory={territory}
             territoryConfig={territoryConfig}
             troopSize={gameState.mapConfig.troopSize}
-            owner={gameController.getTerritoryOwner(territory)}
+            owner={gameController.mapController.getTerritoryOwner(territory)}
             troopState={troopState}
             isBlizzard={isBlizzard}
             isSelected={isSelected}
-            isSelectable={gameController.isSelectable(territory)}
+            isSelectable={gameController.isSelectable(territory, props.selectedTerritory)}
             handleClick={props.handleClick}
           />
         )

@@ -11,7 +11,7 @@ export const ContinentsComponent = () => {
   return (
     <>
       {Object.entries(gameState.mapConfig.continents).map(([name, continent]) =>
-        <path key={name} className={style.ContinentEdge} d={continent.path} data-player={gameController.getContinentOwner(name)} />,
+        <path key={name} className={style.ContinentEdge} d={continent.path} data-player={gameController.mapController.getContinentOwner(name)} />,
       )}
     </>
   )

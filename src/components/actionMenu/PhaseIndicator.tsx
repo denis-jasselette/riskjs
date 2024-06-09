@@ -1,10 +1,11 @@
-import { GamePhase } from '@/models/GamePhase'
-import style from './ActionMenu.module.scss'
 import classnames from 'classnames'
 
+import style from '@/components/actionMenu/ActionMenu.module.scss'
+import { GamePhase } from '@/models/GamePhase'
+
 export interface PhaseIndicatorProps {
-  currentPhase: GamePhase,
-  troopsToDeploy: number,
+  currentPhase: GamePhase
+  troopsToDeploy: number
 }
 
 export const PhaseIndicator = (props: PhaseIndicatorProps) => {
@@ -15,11 +16,12 @@ export const PhaseIndicator = (props: PhaseIndicatorProps) => {
   ]
 
   return (
-    <div class={style.PhaseIndicator}>
-      {phases.map(x =>
-        <div class={classnames(style.PhaseIndicatorPhase, { [`${style.PhaseIndicatorPhaseActive}`]: x.phase === props.currentPhase })} key={x.phase}>
+    <div className={style.PhaseIndicator}>
+      {phases.map(x => (
+        <div className={classnames(style.PhaseIndicatorPhase, { [`${style.PhaseIndicatorPhaseActive}`]: x.phase === props.currentPhase })} key={x.phase}>
           {x.label}
         </div>
+      ),
       )}
     </div>
   )
