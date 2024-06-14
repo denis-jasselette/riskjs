@@ -5,49 +5,15 @@ import { ContinentsComponent } from '@/components/board/ContinentsComponent'
 import style from '@/components/board/Map.module.scss'
 import Territories from '@/components/board/Territories'
 import GameContext from '@/components/GameContext'
-import GameController from '@/controllers/GameController'
 
 export type MapProps = {
+  selectedTerritory?: string
+  handleClickTerritory?: (territory: string) => void
   class?: string
 }
 
 const Map = (props: MapProps) => {
-  const [selectedTerritory, setSelectedTerritory] = useState<string | undefined>(undefined)
-  const { gameState, setGameState } = useContext(GameContext)
-  const gameController = new GameController(gameState)
-
-  const handleClick = (territory: string) => {
-    if (!gameController.isSelectable(territory, selectedTerritory))
-      return
-
-    if (gameState.currentPhase === 'deploy') {
-      setGameState(gameController.deploy(gameState.troopsToDeploy, territory).gameState)
-      return
-    }
-    if (selectedTerritory === territory) {
-      setSelectedTerritory(undefined)
-      return
-    }
-    if (!selectedTerritory) {
-      setSelectedTerritory(territory)
-      return
-    }
-    if (gameState.currentPhase === 'attack') {
-      if (gameController.mapController.getTerritoryOwner(territory) === gameState.currentPlayer) {
-        setSelectedTerritory(territory)
-        return
-      }
-      const attackingTroops = gameController.getTroopCount(selectedTerritory) - 1
-      setGameState(gameController.attack(attackingTroops, selectedTerritory, territory).gameState)
-      setSelectedTerritory(territory)
-      return
-    }
-    if (gameState.currentPhase === 'fortify') {
-      setGameState(gameController.fortify(1, selectedTerritory, territory).gameState)
-      setSelectedTerritory(undefined)
-      return
-    }
-  }
+  const { gameState } = useContext(GameContext)
 
   return (
     <>
@@ -62,7 +28,7 @@ const Map = (props: MapProps) => {
           <ContinentsComponent />
         </g>
         <g className={style.Territories}>
-          <Territories selectedTerritory={selectedTerritory} handleClick={handleClick} />
+          <Territories selectedTerritory={props.selectedTerritory} handleClick={props.handleClickTerritory} />
         </g>
         <g className={style.Bridges}>
           <BridgesComponent />
