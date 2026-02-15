@@ -12,6 +12,12 @@ export function shuffle<T>(array: T[]) {
   }
 }
 
+export function shuffled<T>(array: T[]) {
+  let copy = [...array]
+  shuffle(copy)
+  return copy
+}
+
 export function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min
 }

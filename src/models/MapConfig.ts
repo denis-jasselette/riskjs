@@ -2,6 +2,7 @@ import { CardType } from '@/models/CardType'
 import TerritoryConfig from '@/models/TerritoryConfig'
 
 export default class MapConfig {
+  name: string
   width: number
   height: number
   troopSize: number
@@ -19,6 +20,7 @@ export default class MapConfig {
   blizzards: number
 
   constructor() {
+    this.name = ''
     this.width = 0
     this.height = 0
     this.troopSize = 0
