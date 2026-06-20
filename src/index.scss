@@ -46,14 +46,14 @@ h1 {
   line-height: 1.1;
 }
 
-:global(.form-group) {
+.form-group {
   display: flex;
   margin-bottom: .5em;
   align-items: center;
   flex-direction: column;
   gap: 0.5em;
 
-  :global(.form-label) {
+  .form-label {
     cursor: pointer;
     text-align: left;
     width: 100%;
@@ -69,7 +69,7 @@ h1 {
   }
 }
 
-input, select, button, :global(.btn) {
+input, select, button, .btn {
   border: 1px solid transparent;
   transition: border-color 0.25s, background-color 0.25s;
 
@@ -99,7 +99,7 @@ input[type=number] {
   text-align: right;
 }
 
-button, :global(.btn) {
+button, .btn {
   border-radius: 8px;
   padding: 0.6em 1.2em;
   font-size: 1em;
@@ -113,7 +113,7 @@ button, :global(.btn) {
   }
 }
 
-:global(.switch) {
+.switch {
   position: relative;
   display: inline-block;
   width: 60px;
@@ -126,7 +126,7 @@ button, :global(.btn) {
     height: 0;
   }
 
-  :global(.slider) {
+  .slider {
     position: absolute;
     cursor: pointer;
     top: 0;
@@ -152,28 +152,28 @@ button, :global(.btn) {
     }
 
     /* Rounded sliders */
-    &:global(.round) {
+    &.round {
       border-radius: 34px;
-    
+
       &:before {
         border-radius: 50%;
       }
     }
   }
 
-  input:hover + :global(.slider) {
+  input:hover + .slider {
     border-color: var(--primary-color);
   }
 
-  input:focus + :global(.slider), input:focus-visible + :global(.slider) {
+  input:focus + .slider, input:focus-visible + .slider {
     outline: 4px auto -webkit-focus-ring-color;
   }
 
-  input:checked + :global(.slider) {
+  input:checked + .slider {
     background-color: var(--primary-color);
   }
 
-  input:checked + :global(.slider):before {
+  input:checked + .slider:before {
     -webkit-transform: translateX(26px);
     -ms-transform: translateX(26px);
     transform: translateX(26px);
