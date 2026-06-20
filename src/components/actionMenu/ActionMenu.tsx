@@ -51,7 +51,10 @@ const ActionMenu = (props: ActionMenuProps) => {
                 key={n}
                 className={`${style.DiceSelectorBtn}${props.attackDiceCount === n ? ` ${style.DiceSelectorBtnActive}` : ''}`}
                 disabled={n > props.maxAttackDice!}
-                onClick={(e) => { e.stopPropagation(); props.onAttackDiceChange!(n) }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  props.onAttackDiceChange!(n)
+                }}
               >
                 {n}
               </button>
