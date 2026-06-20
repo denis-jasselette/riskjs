@@ -1,4 +1,4 @@
-import { useContext } from 'preact/hooks'
+import { useContext } from 'react'
 
 import style from '@/components/actionMenu/ActionMenu.module.scss'
 import PhaseEndButton from '@/components/actionMenu/PhaseEndButton'

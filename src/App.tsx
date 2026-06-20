@@ -1,6 +1,6 @@
 import '@/App.module.scss'
 
-import { useState } from 'preact/hooks'
+import { useState } from 'react'
 
 import classicMapConfig from '@/assets/maps/classic/config.json'
 import Game from '@/components/Game'

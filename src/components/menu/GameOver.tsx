@@ -1,6 +1,4 @@
-import { createRef } from 'preact'
-import { useEffect } from 'preact/hooks'
-import ReactModal from 'react-modal'
+import { useEffect, useRef } from 'react'
 
 import style from '@/components/menu/GameOver.module.scss'
 import SupportButton from '@/components/menu/SupportButton'
@@ -15,57 +13,54 @@ export type GameOverProps = {
 }
 
 const GameOver = (props: GameOverProps) => {
-  const playerCountField = createRef()
-  const blizzardsField = createRef()
+  const playerCountField = useRef<HTMLInputElement>(null)
+  const blizzardsField = useRef<HTMLInputElement>(null)
+  const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
-    playerCountField.current!.focus()
-  })
+    dialogRef.current?.showModal()
+    playerCountField.current?.focus()
+  }, [])
 
   const handleStart = () => {
     const params = {
-      playerCount: parseInt(playerCountField.current.value),
-      blizzards: blizzardsField.current.checked,
+      playerCount: parseInt(playerCountField.current!.value),
+      blizzards: blizzardsField.current!.checked,
     }
     props.handleStart(params)
   }
 
-  const handleSubmit = (e: SubmitEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     handleStart()
   }
 
   return (
-    <>
-      <ReactModal
-        isOpen={true}
-        className={style.Modal}
-        overlayClassName={style.Overlay}
-      >
-        <header>
+    <dialog ref={dialogRef} className={style.Modal}>
+      <header>
           <h1>Play Classic Risk</h1>
         </header>
         <form onSubmit={handleSubmit}>
           <main>
             <div className="form-group">
               <label className="form-label" htmlFor="players">Players</label>
-              <input ref={playerCountField} id="players" type="number" min="2" max="6" value="6" />
+              <input ref={playerCountField} id="players" type="number" min="2" max="6" defaultValue="6" />
             </div>
             <div className="form-group">
               <label className="form-label" htmlFor="card_bonus">Card bonus</label>
               <select id="card_bonus">
-                <option selected>Fixed</option>
+                <option>Fixed</option>
                 <option>Progressive</option>
               </select>
             </div>
             <div className="form-group">
               <label className="form-label" htmlFor="bot_count">Bots</label>
-              <input id="bot_count" type="number" min="0" max="4" value="0" />
+              <input id="bot_count" type="number" min="0" max="4" defaultValue="0" />
             </div>
             <div className="form-group">
               <label className="form-label" htmlFor="bot_behavior">Bot behavior</label>
               <select id="bot_behavior">
-                <option selected>Automated</option>
+                <option>Automated</option>
                 <option>Neutral</option>
               </select>
             </div>
@@ -103,8 +98,7 @@ const GameOver = (props: GameOverProps) => {
             <SupportButton />
           </footer>
         </form>
-      </ReactModal>
-    </>
+    </dialog>
   )
 }
 

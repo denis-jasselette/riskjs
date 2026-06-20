@@ -1,4 +1,4 @@
-import { useContext } from 'preact/hooks'
+import { useContext } from 'react'
 
 import GameContext from '@/components/GameContext'
 import { GamePhase } from '@/models/GamePhase'

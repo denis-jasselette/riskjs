@@ -1,4 +1,4 @@
-import { useContext } from 'preact/hooks'
+import { useContext } from 'react'
 
 import style from '@/components/board/Map.module.scss'
 import GameContext from '@/components/GameContext'

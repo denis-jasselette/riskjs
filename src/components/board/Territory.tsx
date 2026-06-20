@@ -16,7 +16,7 @@ export interface TerritoryProps {
 }
 
 const Territory = (props: TerritoryProps) => {
-  const handleClick = (e: MouseEvent) => {
+  const handleClick = (e: React.MouseEvent<SVGPathElement>) => {
     if (!props.handleClick)
       return
 

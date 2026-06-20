@@ -1,10 +1,12 @@
 import '@/index.scss'
 
-import { render } from 'preact'
-import ReactModal from 'react-modal'
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
 
 import { App } from '@/App.tsx'
 
-ReactModal.setAppElement('#app')
-
-render(<App />, document.getElementById('app')!)
+createRoot(document.getElementById('app')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>
+)

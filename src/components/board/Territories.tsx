@@ -1,4 +1,4 @@
-import { useContext } from 'preact/hooks'
+import { useContext } from 'react'
 
 import Territory from '@/components/board/Territory'
 import GameContext from '@/components/GameContext'
