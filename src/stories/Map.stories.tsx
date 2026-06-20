@@ -55,6 +55,7 @@ function buildFixedGameState(): GameState {
     playerConfigs: PLAYERS,
     troops,
     blizzards: [],
+    fogEnabled: false,
     userPlayer: 'white',
     currentPlayer: 'white',
     currentPhase: 'deploy',
