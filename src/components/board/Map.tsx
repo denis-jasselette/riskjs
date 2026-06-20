@@ -62,9 +62,12 @@ const Map = (props: MapProps) => {
       }
     : undefined
 
+  const onScaleChangeRef = useRef(props.onScaleChange)
+  onScaleChangeRef.current = props.onScaleChange
+
   useEffect(() => {
-    props.onScaleChange?.(transform.scale)
-  }, [transform.scale, props.onScaleChange])
+    onScaleChangeRef.current?.(transform.scale)
+  }, [transform.scale])
 
   const transformAttr = `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`
 

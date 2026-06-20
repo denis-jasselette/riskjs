@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react'
+import { useCallback, useContext, useState } from 'react'
 
 import ActionMenu from '@/components/actionMenu/ActionMenu'
 import Map from '@/components/board/Map'
@@ -14,9 +14,9 @@ const Game = () => {
   const [attackResult, setAttackResult] = useState<DiceResultData | null>(null)
   const [isZoomed, setIsZoomed] = useState(false)
 
-  const handleScaleChange = (scale: number) => {
+  const handleScaleChange = useCallback((scale: number) => {
     setIsZoomed(scale > 1.5)
-  }
+  }, [])
   const { gameState, setGameState } = useContext(GameContext)
   const gameController = new GameController(gameState)
 
