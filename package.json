@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "classnames": "^2.5.1",
-    "preact": "^10.19.6",
+    "preact": "^10.29.2",
     "react-modal": "^3.16.3"
   },
   "devDependencies": {
