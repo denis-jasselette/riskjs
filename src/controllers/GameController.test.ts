@@ -102,9 +102,9 @@ describe('GameController', () => {
   describe('attack()', () => {
     it('attacker wins: territory is captured and player changes', () => {
       // Force the RNG so attacker always wins every roll.
-      // attackRng returns [attackerLosses, defenderLosses].
-      // When losses[0] < attackingTroops, the attacker wins.
-      vi.spyOn(controller, 'attackRng').mockReturnValue([0, 4])
+      // attackRng returns { attackerLosses, defenderLosses, attackerDice, defenderDice }.
+      // When attackerLosses < attackingTroops, the attacker wins.
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [], defenderDice: [] })
 
       controller.attack(3, 'B', 'C') // attack with 3 troops against C (4 defenders)
 
@@ -118,7 +118,7 @@ describe('GameController', () => {
 
     it('attacker loses: troop counts decrease, territory stays with defender', () => {
       // Force the RNG so attacker loses all troops.
-      vi.spyOn(controller, 'attackRng').mockReturnValue([3, 0])
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 3, defenderLosses: 0, attackerDice: [], defenderDice: [] })
 
       controller.attack(3, 'B', 'C') // attack with 3 troops against C (4 defenders)
 
@@ -131,7 +131,7 @@ describe('GameController', () => {
     })
 
     it('partial defender loss: defender loses some troops but territory stays', () => {
-      vi.spyOn(controller, 'attackRng').mockReturnValue([3, 2])
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 3, defenderLosses: 2, attackerDice: [], defenderDice: [] })
 
       controller.attack(3, 'B', 'C')
 
@@ -243,16 +243,16 @@ describe('GameController', () => {
   // --------------------------------------------------------
   describe('attackRng()', () => {
     it('returns losses that do not exceed the troops sent', () => {
-      const [attackerLoss, defenderLoss] = controller.attackRng(3, 4)
+      const { attackerLosses, defenderLosses } = controller.attackRng(3, 4)
       // One side must be fully eliminated
-      expect(attackerLoss === 3 || defenderLoss === 4).toBe(true)
-      expect(attackerLoss).toBeGreaterThanOrEqual(0)
-      expect(defenderLoss).toBeGreaterThanOrEqual(0)
+      expect(attackerLosses === 3 || defenderLosses === 4).toBe(true)
+      expect(attackerLosses).toBeGreaterThanOrEqual(0)
+      expect(defenderLosses).toBeGreaterThanOrEqual(0)
     })
 
     it('stops when one side is wiped out', () => {
-      const [attackerLoss, defenderLoss] = controller.attackRng(2, 2)
-      expect(attackerLoss === 2 || defenderLoss === 2).toBe(true)
+      const { attackerLosses, defenderLosses } = controller.attackRng(2, 2)
+      expect(attackerLosses === 2 || defenderLosses === 2).toBe(true)
     })
   })
 })

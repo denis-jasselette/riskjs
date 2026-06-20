@@ -54,12 +54,16 @@ export default class GameController {
     return this
   }
 
-  attackRng(attackingTroops: number, defendingTroops: number, options: { rngType: 'TrueRandom', maxAttacker: number, maxDefender: number } = { rngType: 'TrueRandom', maxAttacker: 3, maxDefender: 2 }): [number, number] {
+  attackRng(attackingTroops: number, defendingTroops: number, options: { rngType: 'TrueRandom', maxAttacker: number, maxDefender: number } = { rngType: 'TrueRandom', maxAttacker: 3, maxDefender: 2 }): { attackerLosses: number, defenderLosses: number, attackerDice: number[], defenderDice: number[] } {
     const losses: [number, number] = [0, 0]
+    let lastAttackerDice: number[] = []
+    let lastDefenderDice: number[] = []
     while (attackingTroops > 0 && defendingTroops > 0) {
       const diceCount = [Math.min(options.maxAttacker, attackingTroops), Math.min(options.maxDefender, defendingTroops)]
       const attackingDice = [...Array(diceCount[0]).keys()].map(() => diceRoll()).sort()
       const defendingDice = [...Array(diceCount[1]).keys()].map(() => diceRoll()).sort()
+      lastAttackerDice = [...attackingDice].reverse()
+      lastDefenderDice = [...defendingDice].reverse()
       for (let i = 0; i < Math.min(...diceCount); i++) {
         if (attackingDice[attackingDice.length - 1 - i] > defendingDice[defendingDice.length - 1 - i]) {
           losses[1] += 1
@@ -72,8 +76,10 @@ export default class GameController {
       }
     }
 
-    return losses
+    return { attackerLosses: losses[0], defenderLosses: losses[1], attackerDice: lastAttackerDice, defenderDice: lastDefenderDice }
   }
+
+  lastAttackResult: { attackerDice: number[], defenderDice: number[], attackerLosses: number, defenderLosses: number } | null = null
 
   attack(attackingTroops: number, attackingTerritory: string, defendingTerritory: string, diceCount?: number): GameController {
     const attackingTroopState = this.mapController.getTroopState(attackingTerritory)
@@ -81,16 +87,17 @@ export default class GameController {
     const defendingTroops = defendingTroopState!.count
     const maxAttacker = diceCount ?? Math.min(attackingTroops, 3)
     console.info(`Attacking ${attackingTroops} against ${defendingTroops} troops from ${attackingTerritory} to ${defendingTerritory} with ${maxAttacker} dice`)
-    const losses = this.attackRng(attackingTroops, defendingTroops, { rngType: 'TrueRandom', maxAttacker, maxDefender: 2 })
-    if (losses[0] === attackingTroops) {
-      console.info(`Attacker lost (attacker: ${-losses[0]}, defender: ${-losses[1]})`)
-      attackingTroopState!.count -= losses[0]
-      defendingTroopState!.count -= losses[1]
+    const result = this.attackRng(attackingTroops, defendingTroops, { rngType: 'TrueRandom', maxAttacker, maxDefender: 2 })
+    this.lastAttackResult = result
+    if (result.attackerLosses === attackingTroops) {
+      console.info(`Attacker lost (attacker: ${-result.attackerLosses}, defender: ${-result.defenderLosses})`)
+      attackingTroopState!.count -= result.attackerLosses
+      defendingTroopState!.count -= result.defenderLosses
     }
     else {
-      console.info(`Defender lost (attacker: ${-losses[0]}, defender: ${-losses[1]})`)
+      console.info(`Defender lost (attacker: ${-result.attackerLosses}, defender: ${-result.defenderLosses})`)
       attackingTroopState!.count -= attackingTroops
-      defendingTroopState!.count = attackingTroops - losses[0]
+      defendingTroopState!.count = attackingTroops - result.attackerLosses
       defendingTroopState!.player = attackingTroopState!.player
     }
     return this
