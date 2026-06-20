@@ -22,11 +22,14 @@ export type ResultsModalProps = {
 
 type Tab = 'standings' | 'troops' | 'territories'
 
-const TABS: { id: Tab, label: string }[] = [
+const ALL_TABS: { id: Tab, label: string }[] = [
   { id: 'standings', label: 'Standings' },
   { id: 'troops', label: 'Troops over time' },
   { id: 'territories', label: 'Territories over time' },
 ]
+
+const visibleTabs = (fogOfWar: boolean) =>
+  fogOfWar ? ALL_TABS.slice(0, 1) : ALL_TABS
 
 export default function ResultsModal({
   winner,
@@ -45,10 +48,16 @@ export default function ResultsModal({
   const gameOver = winner !== null
   const localStanding = standings.find(s => s.player.color === localPlayer.color)
   const localEliminated = localStanding != null && localStanding.territories === null
+  const tabs = visibleTabs(fogOfWar)
 
   useEffect(() => {
     dialogRef.current?.showModal()
   }, [])
+
+  // Reset to standings if the active tab is no longer visible (e.g. fog toggled on)
+  useEffect(() => {
+    if (!tabs.some(t => t.id === activeTab)) setActiveTab('standings')
+  }, [fogOfWar, tabs, activeTab])
 
   return (
     <dialog ref={dialogRef} className={style.dialog}>
@@ -64,7 +73,7 @@ export default function ResultsModal({
       />
 
       <div className={style.tabs}>
-        {TABS.map(t => (
+        {tabs.map(t => (
           <button
             key={t.id}
             className={`${style.tab}${activeTab === t.id ? ` ${style.active}` : ''}`}

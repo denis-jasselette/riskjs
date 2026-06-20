@@ -103,7 +103,7 @@ export const EliminatedFogOff: Story = {
   },
 }
 
-/** Local player is eliminated, fog of war on — Spectate button disabled with explanation. */
+/** Fog of war on — Spectate disabled, chart tabs hidden, opponent counts show ?. */
 export const EliminatedFogOn: Story = {
   name: 'Eliminated mid-game — fog on',
   args: {
