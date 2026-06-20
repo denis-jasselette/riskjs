@@ -5,7 +5,7 @@
   align-items: center;
   margin-bottom: 2em;
   padding: .5em;
-  
+
   border-radius: 0 20px 20px 0;
   border: 1px solid var(--modal-border-color);
   border-left: none;
@@ -39,6 +39,36 @@
     svg {
       width: 16px;
       fill: var(--text-color);
+    }
+  }
+
+  @media (max-width: 640px) {
+    margin-bottom: 0;
+    padding: 4px;
+    border-radius: 10px;
+    border-left: 1px solid var(--modal-border-color);
+    box-shadow: none;
+    background-color: transparent;
+    flex-direction: column;
+
+    &[data-is-current-player=true] {
+      background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    &[data-has-player-lost=true] {
+      opacity: 0.35;
+    }
+
+    .PlayerInfoStats {
+      display: none;
+    }
+
+    .PlayerInfoAvatar {
+      width: 28px;
+    }
+
+    .PlayerInfoUser {
+      font-size: 0.55em;
     }
   }
 }

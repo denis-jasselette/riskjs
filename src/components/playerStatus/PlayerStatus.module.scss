@@ -6,4 +6,20 @@
   display: flex;
   flex-direction: column;
   justify-items: center;
+  z-index: 100;
+
+  @media (max-width: 640px) {
+    top: 0;
+    height: auto;
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    padding: 4px 8px;
+    gap: 4px;
+    background-color: var(--modal-background-color);
+    border-bottom: 1px solid var(--modal-border-color);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+    overflow-x: auto;
+  }
 }
