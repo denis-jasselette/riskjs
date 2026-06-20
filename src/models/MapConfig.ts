@@ -18,6 +18,7 @@ export default class MapConfig {
   }
 
   blizzards: number
+  portals?: [string, string][]
 
   constructor() {
     this.name = ''

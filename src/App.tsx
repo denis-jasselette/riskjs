@@ -11,7 +11,7 @@ import { shuffle } from '@/lib/Random'
 import MapConfig from '@/models/MapConfig'
 import PlayerConfig, { PlayerColorValues } from '@/models/PlayerConfig'
 
-const mapConfig = classicMapConfig as MapConfig
+const mapConfig = classicMapConfig as unknown as MapConfig
 
 export function App() {
   const [gameState, setGameState] = useState(GameLogic.defaultGameState(mapConfig))

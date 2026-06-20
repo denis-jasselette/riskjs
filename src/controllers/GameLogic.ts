@@ -63,6 +63,7 @@ export default class GameLogic {
       playerConfigs: playerConfigs,
       troops: troops,
       blizzards: blizzards,
+      portals: mapConfig.portals,
       userPlayer: playerConfigs[0].color,
       currentPlayer: playerConfigs[0].color,
       currentPhase: 'deploy',

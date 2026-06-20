@@ -3,6 +3,7 @@ import { useContext, useEffect, useRef } from 'react'
 import { BridgesComponent } from '@/components/board/BridgesComponent'
 import { ContinentsComponent } from '@/components/board/ContinentsComponent'
 import style from '@/components/board/Map.module.scss'
+import { PortalsComponent } from '@/components/board/PortalsComponent'
 import Territories from '@/components/board/Territories'
 import GameContext from '@/components/GameContext'
 import { usePanZoom } from '@/hooks/usePanZoom'
@@ -102,6 +103,9 @@ const Map = (props: MapProps) => {
           <g className={style.Bridges}>
             <BridgesComponent />
           </g>
+        </g>
+        <g>
+          <PortalsComponent />
         </g>
       </svg>
       {transform.scale > 1 && (

@@ -665,5 +665,9 @@
       "EasternAustralia": "artillery"
     }
   },
-  "blizzards": 3
+  "blizzards": 3,
+  "portals": [
+    ["Argentina", "SouthAfrica"],
+    ["Indonesia", "Congo"]
+  ]
 }
