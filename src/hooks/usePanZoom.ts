@@ -110,7 +110,7 @@ export function usePanZoom({ resetKey, svgRef }: UsePanZoomOptions): UsePanZoomR
   // Reset transform when resetKey changes
   useEffect(() => {
     resetTransform()
-  }, [resetKey]) // eslint-disable-line
+  }, [resetKey])
 
   const getContainerSize = useCallback((): { w: number, h: number } => {
     const el = svgRef.current
