@@ -1,9 +1,11 @@
+$player-rail-width: 80px;
+
 .Game {
   width: 100%;
   height: 100%;
 
   @media (max-width: 640px) {
-    padding-top: 52px;
+    padding-top: 60px;
     padding-bottom: 80px;
   }
 
@@ -11,4 +13,25 @@
     width: 100%;
     height: 100%;
   }
+}
+
+.GameMapSafeArea {
+  width: 100%;
+  height: 100%;
+  padding-left: $player-rail-width;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+
+  @media (max-width: 640px) {
+    padding-left: 0;
+  }
+}
+
+.GameMapFullscreen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
 }
