@@ -9,8 +9,13 @@ import GameController from '@/controllers/GameController'
 
 const Game = () => {
   const [selectedTerritory, setSelectedTerritory] = useState<string | undefined>(undefined)
+  const [attackDiceCount, setAttackDiceCount] = useState<number>(1)
   const { gameState, setGameState } = useContext(GameContext)
   const gameController = new GameController(gameState)
+
+  const maxAttackDice = selectedTerritory && gameState.currentPhase === 'attack'
+    ? Math.min(gameController.getTroopCount(selectedTerritory) - 1, 3)
+    : 0
 
   const handleEndPhase = () => {
     setGameState(gameController.startNextPhase().gameState)
@@ -18,6 +23,10 @@ const Game = () => {
 
   const handleClickOutside = () => {
     setSelectedTerritory(undefined)
+  }
+
+  const handleAttackDiceChange = (count: number) => {
+    setAttackDiceCount(count)
   }
 
   const handleClickTerritory = (territory: string) => {
@@ -34,15 +43,20 @@ const Game = () => {
     }
     if (!selectedTerritory) {
       setSelectedTerritory(territory)
+      const newMax = Math.min(gameController.getTroopCount(territory) - 1, 3)
+      setAttackDiceCount(Math.min(attackDiceCount, Math.max(newMax, 1)))
       return
     }
     if (gameState.currentPhase === 'attack') {
       if (gameController.mapController.getTerritoryOwner(territory) === gameState.currentPlayer) {
         setSelectedTerritory(territory)
+        const newMax = Math.min(gameController.getTroopCount(territory) - 1, 3)
+        setAttackDiceCount(Math.min(attackDiceCount, Math.max(newMax, 1)))
         return
       }
       const attackingTroops = gameController.getTroopCount(selectedTerritory) - 1
-      setGameState(gameController.attack(attackingTroops, selectedTerritory, territory).gameState)
+      const clampedDice = Math.min(attackDiceCount, Math.min(attackingTroops, 3))
+      setGameState(gameController.attack(attackingTroops, selectedTerritory, territory, clampedDice).gameState)
       setSelectedTerritory(territory)
       return
     }
@@ -56,7 +70,12 @@ const Game = () => {
   return (
     <div className={style.Game} onClick={handleClickOutside}>
       <PlayerStatus />
-      <ActionMenu handleEndPhase={handleEndPhase} />
+      <ActionMenu
+        handleEndPhase={handleEndPhase}
+        attackDiceCount={attackDiceCount}
+        maxAttackDice={maxAttackDice}
+        onAttackDiceChange={handleAttackDiceChange}
+      />
       <Map class={style.GameMap} selectedTerritory={selectedTerritory} handleClickTerritory={handleClickTerritory} />
     </div>
   )
