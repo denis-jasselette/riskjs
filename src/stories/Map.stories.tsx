@@ -8,7 +8,7 @@ import GameState from '@/models/GameState'
 import MapConfig from '@/models/MapConfig'
 import PlayerConfig from '@/models/PlayerConfig'
 
-const mapConfig = classicMapConfig as MapConfig
+const mapConfig = classicMapConfig as unknown as MapConfig
 
 // Fixed player roster — deterministic colors for Chromatic snapshots
 const PLAYERS: PlayerConfig[] = [

@@ -1,4 +1,4 @@
-import { useContext } from 'preact/hooks'
+import { useContext } from 'react'
 
 import GameContext from '@/components/GameContext'
 
@@ -9,7 +9,7 @@ export const PortalsComponent = () => {
 
   return (
     <>
-      {portals.map(([a, b]) => {
+      {portals.map(([a, b]: [string, string]) => {
         const coordsA = territories[a]?.coords
         const coordsB = territories[b]?.coords
         if (!coordsA || !coordsB)
