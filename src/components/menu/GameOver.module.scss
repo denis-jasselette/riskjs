@@ -16,6 +16,8 @@
   background-color: var(--modal-background-color);
   box-shadow: 0px 5px 10px 5px rgba(0, 0, 0, .7);
   outline: none;
+  overflow-y: auto;
+  max-height: calc(100vh - 32px);
 
   header {
     padding: 20px;
@@ -39,5 +41,28 @@
     flex-direction: column;
     align-items: center;
     gap: .5em;
+  }
+
+  @media (max-width: 640px) {
+    margin: 12px;
+    border-radius: 14px;
+
+    header {
+      padding: 14px;
+    }
+
+    header h1 {
+      font-size: 1.2em;
+    }
+
+    main {
+      padding: 14px;
+      padding-top: 0;
+    }
+
+    footer {
+      padding: 14px;
+      padding-top: 0;
+    }
   }
 }
