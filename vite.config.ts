@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import preact from '@preact/preset-vite'
 
@@ -8,5 +9,9 @@ export default defineConfig({
     alias: {
       "@": "/src",
     },
+  },
+  test: {
+    environment: 'node',
+    globals: true,
   },
 })
