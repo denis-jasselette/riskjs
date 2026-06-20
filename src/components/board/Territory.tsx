@@ -33,6 +33,7 @@ const Territory = (props: TerritoryProps) => {
       data-blizzard={props.isBlizzard}
       data-selected={props.isSelected}
       data-selectable={props.isSelectable}
+      data-fog={props.isInFog}
     >
       <path
         d={props.territoryConfig.path}
