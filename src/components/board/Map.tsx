@@ -25,7 +25,7 @@ const Map = (props: MapProps) => {
   })
 
   // Track pointer movement to distinguish tap from drag
-  const pointerStartPos = useRef<{ x: number; y: number } | null>(null)
+  const pointerStartPos = useRef<{ x: number, y: number } | null>(null)
   const pointerMoveTotal = useRef<number>(0)
 
   const handlePointerDown = (e: PointerEvent) => {

@@ -27,7 +27,7 @@ function getDistance(p1: PointerEvent, p2: PointerEvent): number {
   return Math.sqrt(dx * dx + dy * dy)
 }
 
-function getMidpoint(p1: PointerEvent, p2: PointerEvent): { x: number; y: number } {
+function getMidpoint(p1: PointerEvent, p2: PointerEvent): { x: number, y: number } {
   return {
     x: (p1.clientX + p2.clientX) / 2,
     y: (p1.clientY + p2.clientY) / 2,
@@ -94,11 +94,11 @@ export function usePanZoom({ resetKey, svgRef }: UsePanZoomOptions): UsePanZoomR
 
   // Double-tap detection
   const lastTapTime = useRef<number>(0)
-  const lastTapPos = useRef<{ x: number; y: number } | null>(null)
+  const lastTapPos = useRef<{ x: number, y: number } | null>(null)
 
   // Track total movement to distinguish tap from drag
   const pointerMoveTotal = useRef<number>(0)
-  const pointerStartPos = useRef<{ x: number; y: number } | null>(null)
+  const pointerStartPos = useRef<{ x: number, y: number } | null>(null)
 
   const currentTransform = useRef<PanZoomTransform>(DEFAULT_TRANSFORM)
   currentTransform.current = transform
@@ -110,9 +110,9 @@ export function usePanZoom({ resetKey, svgRef }: UsePanZoomOptions): UsePanZoomR
   // Reset transform when resetKey changes
   useEffect(() => {
     resetTransform()
-  }, [resetKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [resetKey]) // eslint-disable-line
 
-  const getContainerSize = useCallback((): { w: number; h: number } => {
+  const getContainerSize = useCallback((): { w: number, h: number } => {
     const el = svgRef.current
     if (!el) return { w: 1, h: 1 }
     const rect = el.getBoundingClientRect()
@@ -124,7 +124,7 @@ export function usePanZoom({ resetKey, svgRef }: UsePanZoomOptions): UsePanZoomR
    * pan/zoom transform (used to compute the zoom pivot).
    */
   const clientToSvgViewBox = useCallback(
-    (clientX: number, clientY: number): { x: number; y: number } => {
+    (clientX: number, clientY: number): { x: number, y: number } => {
       const el = svgRef.current
       if (!el) return { x: clientX, y: clientY }
       const rect = el.getBoundingClientRect()

@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
 import GameController from '@/controllers/GameController'
 import GameState from '@/models/GameState'
 import MapConfig from '@/models/MapConfig'
@@ -191,8 +192,8 @@ describe('GameController', () => {
   // --------------------------------------------------------
   describe('getPlayerTroopTotal()', () => {
     it('returns the sum of troops across all territories', () => {
-      expect(controller.getPlayerTroopTotal('red')).toBe(8)   // A:3 + B:5
-      expect(controller.getPlayerTroopTotal('blue')).toBe(6)  // C:4 + D:2
+      expect(controller.getPlayerTroopTotal('red')).toBe(8) // A:3 + B:5
+      expect(controller.getPlayerTroopTotal('blue')).toBe(6) // C:4 + D:2
     })
   })
 

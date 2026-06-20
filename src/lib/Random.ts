@@ -13,7 +13,7 @@ export function shuffle<T>(array: T[]) {
 }
 
 export function shuffled<T>(array: T[]) {
-  let copy = [...array]
+  const copy = [...array]
   shuffle(copy)
   return copy
 }

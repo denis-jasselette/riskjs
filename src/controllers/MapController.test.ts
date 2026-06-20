@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
+
 import { MapController } from '@/controllers/MapController'
 import GameState from '@/models/GameState'
 import MapConfig from '@/models/MapConfig'
@@ -165,7 +166,7 @@ describe('MapController', () => {
       const gs = buildGameState()
       // Override C's owner to player1 to make South contested
       gs.troops = gs.troops.map(t =>
-        t.territory === 'C' ? { ...t, player: player1 } : t
+        t.territory === 'C' ? { ...t, player: player1 } : t,
       )
       const mc = new MapController(gs)
       expect(mc.getContinentOwner('South')).toBeUndefined()
