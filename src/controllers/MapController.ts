@@ -77,6 +77,9 @@ export class MapController {
         if (visitedSet.has(nextNode))
           continue
 
+        if (this.isTerritoryBlizzard(nextNode))
+          continue
+
         if (options.sameOwner && startOwner !== this.getTerritoryOwner(nextNode))
           continue
 
