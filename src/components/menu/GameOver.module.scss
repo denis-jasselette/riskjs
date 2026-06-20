@@ -32,6 +32,9 @@
     padding: 20px;
     padding-top: 0;
     text-align: center;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5em;
   }
 
   footer {
@@ -58,6 +61,8 @@
     main {
       padding: 14px;
       padding-top: 0;
+      grid-template-columns: 1fr;
+      gap: 1em;
     }
 
     footer {
