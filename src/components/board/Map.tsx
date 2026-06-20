@@ -1,4 +1,4 @@
-import { useContext, useRef } from 'preact/hooks'
+import { useContext, useRef } from 'react'
 
 import { BridgesComponent } from '@/components/board/BridgesComponent'
 import { ContinentsComponent } from '@/components/board/ContinentsComponent'
@@ -28,29 +28,29 @@ const Map = (props: MapProps) => {
   const pointerStartPos = useRef<{ x: number, y: number } | null>(null)
   const pointerMoveTotal = useRef<number>(0)
 
-  const handlePointerDown = (e: PointerEvent) => {
+  const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     pointerStartPos.current = { x: e.clientX, y: e.clientY }
     pointerMoveTotal.current = 0
-    handlers.onPointerDown(e)
+    handlers.onPointerDown(e.nativeEvent)
   }
 
-  const handlePointerMove = (e: PointerEvent) => {
+  const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
     if (pointerStartPos.current) {
       const dx = e.clientX - pointerStartPos.current.x
       const dy = e.clientY - pointerStartPos.current.y
       pointerMoveTotal.current = Math.sqrt(dx * dx + dy * dy)
     }
-    handlers.onPointerMove(e)
+    handlers.onPointerMove(e.nativeEvent)
   }
 
-  const handlePointerUp = (e: PointerEvent) => {
-    handlers.onPointerUp(e)
+  const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
+    handlers.onPointerUp(e.nativeEvent)
   }
 
-  const handlePointerCancel = (e: PointerEvent) => {
+  const handlePointerCancel = (e: React.PointerEvent<SVGSVGElement>) => {
     pointerStartPos.current = null
     pointerMoveTotal.current = 0
-    handlers.onPointerCancel(e)
+    handlers.onPointerCancel(e.nativeEvent)
   }
 
   // Wrap click handler to suppress if pointer moved more than threshold (drag, not tap)

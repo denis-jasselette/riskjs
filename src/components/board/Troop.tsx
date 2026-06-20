@@ -1,4 +1,4 @@
-import { useEffect } from 'preact/hooks'
+import { useEffect } from 'react'
 
 import mapStyle from '@/components/board/Map.module.scss'
 import style from '@/components/board/Troop.module.scss'

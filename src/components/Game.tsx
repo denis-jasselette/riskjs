@@ -1,4 +1,4 @@
-import { useContext, useState } from 'preact/hooks'
+import { useContext, useState } from 'react'
 
 import ActionMenu from '@/components/actionMenu/ActionMenu'
 import Map from '@/components/board/Map'

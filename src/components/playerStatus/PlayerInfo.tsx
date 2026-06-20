@@ -1,4 +1,4 @@
-import { useContext } from 'preact/hooks'
+import { useContext } from 'react'
 
 import Avatar from '@/components/Avatar'
 import GameContext from '@/components/GameContext'
