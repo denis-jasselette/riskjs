@@ -2,6 +2,7 @@ import { useContext, useState } from 'react'
 
 import ActionMenu from '@/components/actionMenu/ActionMenu'
 import Map from '@/components/board/Map'
+import DiceResult, { DiceResultData } from '@/components/DiceResult'
 import style from '@/components/Game.module.scss'
 import GameContext from '@/components/GameContext'
 import PlayerStatus from '@/components/playerStatus/PlayerStatus'
@@ -10,6 +11,7 @@ import GameController from '@/controllers/GameController'
 const Game = () => {
   const [selectedTerritory, setSelectedTerritory] = useState<string | undefined>(undefined)
   const [attackDiceCount, setAttackDiceCount] = useState<number>(1)
+  const [attackResult, setAttackResult] = useState<DiceResultData | null>(null)
   const { gameState, setGameState } = useContext(GameContext)
   const gameController = new GameController(gameState)
 
@@ -56,7 +58,11 @@ const Game = () => {
       }
       const attackingTroops = gameController.getTroopCount(selectedTerritory) - 1
       const clampedDice = Math.min(attackDiceCount, Math.min(attackingTroops, 3))
-      setGameState(gameController.attack(attackingTroops, selectedTerritory, territory, clampedDice).gameState)
+      const updatedController = gameController.attack(attackingTroops, selectedTerritory, territory, clampedDice)
+      setGameState(updatedController.gameState)
+      if (updatedController.lastAttackResult) {
+        setAttackResult(updatedController.lastAttackResult)
+      }
       setSelectedTerritory(territory)
       return
     }
@@ -77,6 +83,9 @@ const Game = () => {
         onAttackDiceChange={handleAttackDiceChange}
       />
       <Map class={style.GameMap} selectedTerritory={selectedTerritory} handleClickTerritory={handleClickTerritory} />
+      {attackResult && (
+        <DiceResult result={attackResult} onDismiss={() => setAttackResult(null)} />
+      )}
     </div>
   )
 }
