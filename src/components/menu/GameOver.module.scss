@@ -31,10 +31,10 @@
   main {
     padding: 20px;
     padding-top: 0;
-    text-align: center;
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5em;
+    grid-template-columns: auto 1fr;
+    gap: 0.75em 1.5em;
+    align-items: center;
   }
 
   footer {
@@ -62,7 +62,7 @@
       padding: 14px;
       padding-top: 0;
       grid-template-columns: 1fr;
-      gap: 1em;
+      gap: 0.5em 1em;
     }
 
     footer {
