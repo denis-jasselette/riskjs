@@ -30,7 +30,7 @@ const PlayerInfo = (props: PlayerInfoProps) => {
           hasPlayerLost={gameController.hasPlayerLost(props.playerConfig.color)}
         />
         {gameState.userPlayer === props.playerConfig.color
-        && <div className={style.PlayerInfoUser}>You</div>}
+          && <div className={style.PlayerInfoUser}>You</div>}
       </div>
 
       <div className={style.PlayerInfoStats}>
