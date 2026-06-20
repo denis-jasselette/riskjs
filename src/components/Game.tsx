@@ -12,6 +12,11 @@ const Game = () => {
   const [selectedTerritory, setSelectedTerritory] = useState<string | undefined>(undefined)
   const [attackDiceCount, setAttackDiceCount] = useState<number>(1)
   const [attackResult, setAttackResult] = useState<DiceResultData | null>(null)
+  const [isZoomed, setIsZoomed] = useState(false)
+
+  const handleScaleChange = (scale: number) => {
+    setIsZoomed(scale > 1.5)
+  }
   const { gameState, setGameState } = useContext(GameContext)
   const gameController = new GameController(gameState)
 
@@ -82,7 +87,12 @@ const Game = () => {
         maxAttackDice={maxAttackDice}
         onAttackDiceChange={handleAttackDiceChange}
       />
-      <Map class={style.GameMap} selectedTerritory={selectedTerritory} handleClickTerritory={handleClickTerritory} />
+      <Map
+        class={isZoomed ? style.GameMapFullscreen : style.GameMapSafeArea}
+        selectedTerritory={selectedTerritory}
+        handleClickTerritory={handleClickTerritory}
+        onScaleChange={handleScaleChange}
+      />
       {attackResult && (
         <DiceResult result={attackResult} onDismiss={() => setAttackResult(null)} />
       )}

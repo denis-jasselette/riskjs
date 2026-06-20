@@ -1,4 +1,4 @@
-import { useContext, useRef } from 'react'
+import { useContext, useEffect, useRef } from 'react'
 
 import { BridgesComponent } from '@/components/board/BridgesComponent'
 import { ContinentsComponent } from '@/components/board/ContinentsComponent'
@@ -11,6 +11,7 @@ export type MapProps = {
   selectedTerritory?: string
   handleClickTerritory?: (territory: string) => void
   class?: string
+  onScaleChange?: (scale: number) => void
 }
 
 const TAP_MOVE_THRESHOLD = 5
@@ -60,6 +61,10 @@ const Map = (props: MapProps) => {
         props.handleClickTerritory!(territory)
       }
     : undefined
+
+  useEffect(() => {
+    props.onScaleChange?.(transform.scale)
+  }, [transform.scale, props.onScaleChange])
 
   const transformAttr = `translate(${transform.x}, ${transform.y}) scale(${transform.scale})`
 
