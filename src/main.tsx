@@ -1,4 +1,4 @@
-import '@/index.module.scss'
+import '@/index.scss'
 
 import { render } from 'preact'
 import ReactModal from 'react-modal'
