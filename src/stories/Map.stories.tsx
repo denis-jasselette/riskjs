@@ -4,14 +4,68 @@ import { useState } from 'react'
 import classicMapConfig from '@/assets/maps/classic/config.json'
 import Map from '@/components/board/Map'
 import GameContext from '@/components/GameContext'
-import GameLogic from '@/controllers/GameLogic'
+import GameState from '@/models/GameState'
 import MapConfig from '@/models/MapConfig'
+import PlayerConfig from '@/models/PlayerConfig'
 
 const mapConfig = classicMapConfig as MapConfig
-const gameState = GameLogic.defaultGameState(mapConfig)
+
+// Fixed player roster — deterministic colors for Chromatic snapshots
+const PLAYERS: PlayerConfig[] = [
+  { currentUser: true, name: 'Albert', color: 'white', human: true, position: 1 },
+  { currentUser: false, name: 'Bernard', color: 'black', human: true, position: 2 },
+  { currentUser: false, name: 'Cédric', color: 'red', human: true, position: 3 },
+  { currentUser: false, name: 'David', color: 'green', human: true, position: 4 },
+  { currentUser: false, name: 'Eric', color: 'blue', human: true, position: 5 },
+  { currentUser: false, name: 'Fabien', color: 'purple', human: true, position: 6 },
+]
+
+// Fixed territory assignment — 7 territories per player, same order every time
+const TERRITORY_OWNERS: [string, number][] = [
+  // white (Albert) — North America north
+  ['Alaska', 3], ['NorthwestTerritory', 2], ['Greenland', 2],
+  ['Alberta', 2], ['Ontario', 3], ['Quebec', 2], ['WesternUnitedStates', 2],
+  // black (Bernard) — North America south + South America
+  ['EasternUnitedStates', 2], ['CentralAmerica', 2], ['Venezuela', 2],
+  ['Peru', 2], ['Brazil', 3], ['Argentina', 2], ['Iceland', 2],
+  // red (Cédric) — Europe
+  ['GreatBritain', 2], ['Scandinavia', 2], ['Ukraine', 3],
+  ['NorthernEurope', 2], ['SouthernEurope', 2], ['WesternEurope', 2], ['NorthAfrica', 2],
+  // green (David) — Africa
+  ['Egypt', 2], ['EastAfrica', 2], ['Congo', 2],
+  ['SouthAfrica', 2], ['Madagascar', 2], ['Ural', 2], ['Siberia', 3],
+  // blue (Eric) — Asia north
+  ['Yakutsk', 2], ['Kamchatka', 3], ['Irkutsk', 2],
+  ['Mongolia', 2], ['Japan', 2], ['Afghanistan', 2], ['MiddleEast', 2],
+  // purple (Fabien) — Asia south + Oceania
+  ['India', 2], ['Siam', 2], ['China', 3],
+  ['Indonesia', 2], ['NewGuinea', 2], ['WesternAustralia', 2], ['EasternAustralia', 2],
+]
+
+function buildFixedGameState(): GameState {
+  const troops = TERRITORY_OWNERS.map(([territory, count], i) => ({
+    territory,
+    count,
+    player: PLAYERS[Math.floor(i / 7)],
+  }))
+
+  return {
+    gameOver: false,
+    mapConfig,
+    playerConfigs: PLAYERS,
+    troops,
+    blizzards: [],
+    userPlayer: 'white',
+    currentPlayer: 'white',
+    currentPhase: 'deploy',
+    troopsToDeploy: 3,
+  }
+}
+
+const FIXED_STATE = buildFixedGameState()
 
 function GameContextWrapper({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState(gameState)
+  const [state, setState] = useState(FIXED_STATE)
   return (
     <GameContext.Provider value={{ gameState: state, setGameState: setState }}>
       {children}
@@ -19,31 +73,21 @@ function GameContextWrapper({ children }: { children: React.ReactNode }) {
   )
 }
 
-/** Player rail mock — mimics the fixed sidebar on desktop */
 function PlayerRailMock({ visible = true }: { visible?: boolean }) {
   if (!visible) return null
   return (
-    <div
-      style={{
-        position: 'fixed',
-        left: 0,
-        top: '5%',
-        height: '90%',
-        width: 80,
-        background: 'rgba(0,0,0,0.7)',
-        color: '#fff',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: 12,
-        zIndex: 100,
-        gap: 8,
-      }}
+    <div style={{
+      position: 'fixed', left: 0, top: '5%', height: '90%', width: 80,
+      background: 'rgba(0,0,0,0.7)', color: '#fff', display: 'flex',
+      flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      fontSize: 12, zIndex: 100, gap: 8,
+    }}
     >
-      <div>P1</div>
-      <div>P2</div>
-      <div>P3</div>
+      {PLAYERS.map(p => (
+        <div key={p.color} style={{ color: p.color === 'white' ? '#eee' : p.color }}>
+          {p.name.slice(0, 2)}
+        </div>
+      ))}
     </div>
   )
 }
@@ -64,10 +108,7 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-/**
- * Desktop view at scale 1. The player rail sits on the left; the map is
- * offset by `padding-left: 80px` so territories are not hidden behind it.
- */
+/** Desktop — safe area layout. Map is offset by the player rail width. */
 export const Default: Story = {
   parameters: {
     viewport: { defaultViewport: 'desktop' },
@@ -76,16 +117,10 @@ export const Default: Story = {
   render: () => (
     <>
       <PlayerRailMock />
-      <div
-        style={{
-          width: '100%',
-          height: '100%',
-          paddingLeft: 80,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxSizing: 'border-box',
-        }}
+      <div style={{
+        width: '100%', height: '100%', paddingLeft: 80,
+        display: 'flex', alignItems: 'center', boxSizing: 'border-box',
+      }}
       >
         <Map />
       </div>
@@ -93,22 +128,11 @@ export const Default: Story = {
   ),
 }
 
-/**
- * Zoomed-in state (scale > 1.5). The map wrapper switches to
- * `position: fixed; inset: 0` so it uses the full viewport.
- * In the real game this is triggered by pinch/scroll zoom.
- * Here the CSS layout simulates the fullscreen container.
- */
+/** Zoomed-in — fullscreen layout applied when scale > 1.5. */
 export const ZoomedIn: Story = {
   parameters: {
     viewport: { defaultViewport: 'desktop' },
     chromatic: { viewports: [1280] },
-    docs: {
-      description: {
-        story:
-          'Simulates the fullscreen layout applied when transform.scale > 1.5. In the live game, pinch or scroll to zoom in.',
-      },
-    },
   },
   render: () => (
     <>
@@ -120,10 +144,7 @@ export const ZoomedIn: Story = {
   ),
 }
 
-/**
- * Mobile viewport (375×667). The player bar moves to the top; no left
- * padding is applied to the map container.
- */
+/** Mobile (375px) — horizontal player bar at top, no left padding. */
 export const Mobile: Story = {
   parameters: {
     viewport: { defaultViewport: 'mobile1' },
@@ -131,55 +152,36 @@ export const Mobile: Story = {
   },
   render: () => (
     <>
-      {/* Mobile player bar at top */}
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: 60,
-          background: 'rgba(0,0,0,0.8)',
-          color: '#fff',
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-around',
-          zIndex: 100,
-          fontSize: 12,
-        }}
+      <div style={{
+        position: 'fixed', top: 0, left: 0, width: '100%', height: 52,
+        background: 'rgba(0,0,0,0.8)', color: '#fff', display: 'flex',
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around',
+        zIndex: 100, fontSize: 12,
+      }}
       >
-        <div>P1</div>
-        <div>P2</div>
-        <div>P3</div>
+        {PLAYERS.map(p => (
+          <div key={p.color} style={{ color: p.color === 'white' ? '#eee' : p.color }}>
+            {p.name.slice(0, 2)}
+          </div>
+        ))}
       </div>
-      <div style={{ width: '100%', height: '100%', paddingTop: 60, boxSizing: 'border-box' }}>
+      <div style={{ width: '100%', height: '100%', paddingTop: 52, boxSizing: 'border-box' }}>
         <Map />
       </div>
     </>
   ),
 }
 
-/**
- * Regression reference: the OLD broken layout where the player rail overlaps
- * the map with no padding compensation. Keep this story to catch regressions.
- */
+/** Regression reference: pre-fix layout where the rail overlaps the map. */
 export const PlayerRailOverlap: Story = {
-  name: 'PlayerRailOverlap (broken — regression ref)',
+  name: 'PlayerRailOverlap (regression ref)',
   parameters: {
     viewport: { defaultViewport: 'desktop' },
     chromatic: { viewports: [1280] },
-    docs: {
-      description: {
-        story:
-          'Shows the pre-fix layout: the player rail overlaps the left side of the map. Regression reference — the overlap is intentional here.',
-      },
-    },
   },
   render: () => (
     <>
       <PlayerRailMock />
-      {/* No padding-left — intentionally broken layout */}
       <div style={{ width: '100%', height: '100%' }}>
         <Map />
       </div>
