@@ -31,9 +31,38 @@
   }
 }
 
-.Avatar, .PhaseIndicator, .PhaseEndButton {
+.Avatar, .PhaseIndicator, .PhaseEndButton, .DiceSelector {
   flex: 0;
   white-space: nowrap;
+}
+
+.DiceSelector {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+
+  .DiceSelectorLabel {
+    font-size: .85em;
+    opacity: .7;
+    margin-right: 2px;
+  }
+
+  .DiceSelectorBtn {
+    width: 2em;
+    padding: 2px 0;
+    text-align: center;
+    opacity: .6;
+
+    &Active {
+      opacity: 1;
+      border-color: var(--primary-color);
+    }
+
+    &:disabled {
+      opacity: .25;
+    }
+  }
 }
 
 .PhaseIndicator {

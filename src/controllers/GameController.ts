@@ -75,12 +75,13 @@ export default class GameController {
     return losses
   }
 
-  attack(attackingTroops: number, attackingTerritory: string, defendingTerritory: string): GameController {
+  attack(attackingTroops: number, attackingTerritory: string, defendingTerritory: string, diceCount?: number): GameController {
     const attackingTroopState = this.mapController.getTroopState(attackingTerritory)
     const defendingTroopState = this.mapController.getTroopState(defendingTerritory)
     const defendingTroops = defendingTroopState!.count
-    console.info(`Attacking ${attackingTroops} against ${defendingTroops} troops from ${attackingTerritory} to ${defendingTerritory}`)
-    const losses = this.attackRng(attackingTroops, defendingTroops)
+    const maxAttacker = diceCount ?? Math.min(attackingTroops, 3)
+    console.info(`Attacking ${attackingTroops} against ${defendingTroops} troops from ${attackingTerritory} to ${defendingTerritory} with ${maxAttacker} dice`)
+    const losses = this.attackRng(attackingTroops, defendingTroops, { rngType: 'TrueRandom', maxAttacker, maxDefender: 2 })
     if (losses[0] === attackingTroops) {
       console.info(`Attacker lost (attacker: ${-losses[0]}, defender: ${-losses[1]})`)
       attackingTroopState!.count -= losses[0]
