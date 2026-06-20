@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react'
-import { Select } from '@ark-ui/react/select'
 import { Portal } from '@ark-ui/react/portal'
+import { Select } from '@ark-ui/react/select'
 import { createListCollection } from '@ark-ui/react/select'
+import type { Meta, StoryObj } from '@storybook/react'
 
 const playerCounts = createListCollection({
   items: [

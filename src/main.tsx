@@ -8,5 +8,5 @@ import { App } from '@/App.tsx'
 createRoot(document.getElementById('app')!).render(
   <StrictMode>
     <App />
-  </StrictMode>
+  </StrictMode>,
 )
