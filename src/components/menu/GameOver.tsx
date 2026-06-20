@@ -7,6 +7,7 @@ export type HandleStartParams = {
   playerCount: number
   blizzards: boolean
   fog: boolean
+  capitalMode: boolean
 }
 
 export type GameOverProps = {
@@ -17,6 +18,7 @@ const GameOver = (props: GameOverProps) => {
   const playerCountField = useRef<HTMLInputElement>(null)
   const blizzardsField = useRef<HTMLInputElement>(null)
   const fogField = useRef<HTMLInputElement>(null)
+  const capitalModeField = useRef<HTMLInputElement>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -29,6 +31,7 @@ const GameOver = (props: GameOverProps) => {
       playerCount: parseInt(playerCountField.current!.value),
       blizzards: blizzardsField.current!.checked,
       fog: fogField.current!.checked,
+      capitalMode: capitalModeField.current!.checked,
     }
     props.handleStart(params)
   }
@@ -88,6 +91,13 @@ const GameOver = (props: GameOverProps) => {
             <label className="switch">
               <input ref={fogField} id="fog" type="checkbox" />
               <span className="slider round"></span>
+            </label>
+          </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="capital_mode">Capital mode</label>
+            <label className="switch">
+              <input ref={capitalModeField} id="capital_mode" type="checkbox" />
+              <span className="slider round" />
             </label>
           </div>
         </main>
