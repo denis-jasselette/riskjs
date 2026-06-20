@@ -54,7 +54,7 @@ export default class GameLogic {
     return [troops, blizzards]
   }
 
-  static initState(mapConfig: MapConfig, playerConfigs: PlayerConfig[], blizzardsEnabled: boolean, gameOver: boolean = false): GameState {
+  static initState(mapConfig: MapConfig, playerConfigs: PlayerConfig[], blizzardsEnabled: boolean, gameOver: boolean = false, fogEnabled: boolean = false): GameState {
     const [troops, blizzards] = this.autoSetupTroops(mapConfig, playerConfigs, blizzardsEnabled)
 
     const state: GameState = {
@@ -66,6 +66,7 @@ export default class GameLogic {
       userPlayer: playerConfigs[0].color,
       currentPlayer: playerConfigs[0].color,
       currentPhase: 'deploy',
+      fogEnabled: fogEnabled,
       troopsToDeploy: 0,
     }
     if (gameOver)

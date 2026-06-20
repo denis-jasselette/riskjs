@@ -16,7 +16,7 @@ const mapConfig = classicMapConfig as MapConfig
 export function App() {
   const [gameState, setGameState] = useState(GameLogic.defaultGameState(mapConfig))
 
-  const handleStart = ({ playerCount, blizzards }: HandleStartParams) => {
+  const handleStart = ({ playerCount, blizzards, fog }: HandleStartParams) => {
     const availableColors = [...PlayerColorValues]
     shuffle(availableColors)
     const playerConfigs: PlayerConfig[] = []
@@ -26,7 +26,7 @@ export function App() {
         currentUser: false, name: color, color: color, human: true, position: i + 1,
       })
     }
-    setGameState(GameLogic.initState(mapConfig, playerConfigs, blizzards, false))
+    setGameState(GameLogic.initState(mapConfig, playerConfigs, blizzards, false, fog))
   }
 
   return (

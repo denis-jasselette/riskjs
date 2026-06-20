@@ -6,6 +6,7 @@ import SupportButton from '@/components/menu/SupportButton'
 export type HandleStartParams = {
   playerCount: number
   blizzards: boolean
+  fog: boolean
 }
 
 export type GameOverProps = {
@@ -15,6 +16,7 @@ export type GameOverProps = {
 const GameOver = (props: GameOverProps) => {
   const playerCountField = useRef<HTMLInputElement>(null)
   const blizzardsField = useRef<HTMLInputElement>(null)
+  const fogField = useRef<HTMLInputElement>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -26,6 +28,7 @@ const GameOver = (props: GameOverProps) => {
     const params = {
       playerCount: parseInt(playerCountField.current!.value),
       blizzards: blizzardsField.current!.checked,
+      fog: fogField.current!.checked,
     }
     props.handleStart(params)
   }
@@ -83,7 +86,7 @@ const GameOver = (props: GameOverProps) => {
           <div className="form-group">
             <label className="form-label" htmlFor="fog">Fog of war</label>
             <label className="switch">
-              <input id="fog" type="checkbox" />
+              <input ref={fogField} id="fog" type="checkbox" />
               <span className="slider round"></span>
             </label>
           </div>

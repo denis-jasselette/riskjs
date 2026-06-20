@@ -31,6 +31,7 @@ const Territories = (props: TerritoriesComponentProps) => {
         const troopState = gameController.mapController.getTroopState(territory)
         const isBlizzard = gameController.mapController.isTerritoryBlizzard(territory)
         const isSelected = territory === props.selectedTerritory
+        const isInFog = gameState.fog !== undefined && !gameState.fog.includes(territory)
         return (
           <Territory
             key={territory}
@@ -42,6 +43,7 @@ const Territories = (props: TerritoriesComponentProps) => {
             isBlizzard={isBlizzard}
             isSelected={isSelected}
             isSelectable={gameController.isSelectable(territory, props.selectedTerritory)}
+            isInFog={isInFog}
             handleClick={props.handleClick}
           />
         )
