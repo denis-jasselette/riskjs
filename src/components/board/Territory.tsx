@@ -12,6 +12,7 @@ export interface TerritoryProps {
   isBlizzard: boolean
   isSelected: boolean
   isSelectable: boolean
+  isInFog: boolean
   handleClick?: (territory: string) => void
 }
 
@@ -32,6 +33,7 @@ const Territory = (props: TerritoryProps) => {
       data-blizzard={props.isBlizzard}
       data-selected={props.isSelected}
       data-selectable={props.isSelectable}
+      data-fog={props.isInFog}
     >
       <path
         d={props.territoryConfig.path}
@@ -46,6 +48,7 @@ const Territory = (props: TerritoryProps) => {
             x={props.territoryConfig.coords.x - props.troopSize * (80 / 160)}
             y={props.territoryConfig.coords.y - props.troopSize * (60 / 150)}
             width={props.troopSize}
+            label={props.isInFog ? '?' : undefined}
           />
         </g>
       )}

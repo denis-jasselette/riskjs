@@ -16,6 +16,7 @@ export default class GameState {
   /* TODO */
   portals?: string[]
   fog?: string[]
+  fogEnabled: boolean
   troopsToDeploy: number
 
   constructor() {
@@ -27,6 +28,7 @@ export default class GameState {
     this.userPlayer = ''
     this.currentPlayer = ''
     this.currentPhase = 'deploy'
+    this.fogEnabled = false
     this.troopsToDeploy = 0
   }
 }

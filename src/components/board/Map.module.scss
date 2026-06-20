@@ -88,6 +88,14 @@
     stroke-width: 2;
   }
   
+  &[data-fog=true] {
+    fill: #555 !important;
+
+    &[data-selectable=true]:hover {
+      fill: #777 !important;
+    }
+  }
+
   @each $key, $color in colors.$troop-colors {
     &[data-player="#{$key}"] {
       fill: lighten($color, 10%);

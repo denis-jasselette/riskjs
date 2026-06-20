@@ -104,4 +104,22 @@ export class MapController {
   areAdjacent(start: TerritoryId, end: TerritoryId, options: PathingOptions = {}): boolean {
     return this.shortestRoute(start, end, { ...options, maxDepth: 2 }) !== null
   }
+
+  getVisibleTerritories(playerId: string): string[] {
+    const owned = this.gameState.troops
+      .filter(t => t.player.color === playerId)
+      .map(t => t.territory)
+
+    const visible = new Set<string>(owned)
+    for (const territory of owned) {
+      const config = this.gameState.mapConfig.territories[territory]
+      if (config) {
+        for (const adj of config.adjacency) {
+          visible.add(adj)
+        }
+      }
+    }
+
+    return Array.from(visible)
+  }
 }
