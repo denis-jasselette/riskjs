@@ -50,6 +50,16 @@ export class MapController {
     return undefined
   }
 
+  getPortalNeighbours(territory: TerritoryId): TerritoryId[] {
+    const portals = this.gameState.portals ?? this.gameState.mapConfig.portals ?? []
+    const neighbours: TerritoryId[] = []
+    for (const [a, b] of portals) {
+      if (a === territory) neighbours.push(b)
+      else if (b === territory) neighbours.push(a)
+    }
+    return neighbours
+  }
+
   _bfs(start: TerritoryId, end: TerritoryId, options: PathingOptions): Route | null {
     const initRoute = [start]
     if (start === end) {
@@ -73,7 +83,12 @@ export class MapController {
 
       visitedSet.add(lastNode)
 
-      for (const nextNode of this.gameState.mapConfig.territories[lastNode].adjacency) {
+      const neighbours = [
+        ...this.gameState.mapConfig.territories[lastNode].adjacency,
+        ...this.getPortalNeighbours(lastNode),
+      ]
+
+      for (const nextNode of neighbours) {
         if (visitedSet.has(nextNode))
           continue
 

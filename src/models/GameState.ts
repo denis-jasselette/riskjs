@@ -13,8 +13,7 @@ export default class GameState {
   userPlayer: string
   currentPhase: GamePhase
 
-  /* TODO */
-  portals?: string[]
+  portals?: [string, string][]
   fog?: string[]
   fogEnabled: boolean
   troopsToDeploy: number
