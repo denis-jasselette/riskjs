@@ -25,6 +25,10 @@ const Territories = (props: TerritoriesComponentProps) => {
   const entries = Object.entries(gameState.mapConfig.territories)
     .sort((a: [string, TerritoryConfig], b: [string, TerritoryConfig]) => compareFn(a[0], b[0]))
 
+  const capitalsSet = new Set<string>(
+    gameState.capitals ? Object.values(gameState.capitals) : [],
+  )
+
   return (
     <>
       {entries.map(([territory, territoryConfig]) => {
@@ -32,6 +36,7 @@ const Territories = (props: TerritoriesComponentProps) => {
         const isBlizzard = gameController.mapController.isTerritoryBlizzard(territory)
         const isSelected = territory === props.selectedTerritory
         const isInFog = gameState.fog !== undefined && !gameState.fog.includes(territory)
+        const isCapital = capitalsSet.has(territory)
         return (
           <Territory
             key={territory}
@@ -44,6 +49,7 @@ const Territories = (props: TerritoriesComponentProps) => {
             isSelected={isSelected}
             isSelectable={gameController.isSelectable(territory, props.selectedTerritory)}
             isInFog={isInFog}
+            isCapital={isCapital}
             handleClick={props.handleClick}
           />
         )

@@ -85,6 +85,7 @@ export default class GameController {
     const attackingTroopState = this.mapController.getTroopState(attackingTerritory)
     const defendingTroopState = this.mapController.getTroopState(defendingTerritory)
     const defendingTroops = defendingTroopState!.count
+    const previousDefender = defendingTroopState!.player.color
     const maxAttacker = diceCount ?? Math.min(attackingTroops, 3)
     console.info(`Attacking ${attackingTroops} against ${defendingTroops} troops from ${attackingTerritory} to ${defendingTerritory} with ${maxAttacker} dice`)
     const result = this.attackRng(attackingTroops, defendingTroops, { rngType: 'TrueRandom', maxAttacker, maxDefender: 2 })
@@ -99,6 +100,18 @@ export default class GameController {
       attackingTroopState!.count -= attackingTroops
       defendingTroopState!.count = attackingTroops - result.attackerLosses
       defendingTroopState!.player = attackingTroopState!.player
+
+      if (
+        this.gameState.capitalModeEnabled
+        && this.gameState.capitals
+        && this.gameState.capitals[previousDefender] === defendingTerritory
+      ) {
+        console.info(`Capital of ${previousDefender} captured — player eliminated`)
+        if (!this.gameState.eliminatedByCapture)
+          this.gameState.eliminatedByCapture = []
+        if (!this.gameState.eliminatedByCapture.includes(previousDefender))
+          this.gameState.eliminatedByCapture.push(previousDefender)
+      }
     }
     return this
   }
@@ -171,8 +184,9 @@ export default class GameController {
     return 0
   }
 
-  hasPlayerLost(_player: string) {
-    /* TODO */
+  hasPlayerLost(player: string): boolean {
+    if (this.gameState.eliminatedByCapture && this.gameState.eliminatedByCapture.includes(player))
+      return true
     return false
   }
 

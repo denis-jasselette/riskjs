@@ -19,6 +19,10 @@ export default class GameState {
   fogEnabled: boolean
   troopsToDeploy: number
 
+  capitalModeEnabled?: boolean
+  capitals?: Record<string, string>
+  eliminatedByCapture?: string[]
+
   constructor() {
     this.gameOver = true
     this.mapConfig = new MapConfig()
