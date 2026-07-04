@@ -70,93 +70,8 @@ importers:
         specifier: ^12.1.0
         version: 12.1.0(eslint@8.57.0)
       globals:
-        specifier: ^17.6.0
-        version: 17.6.0
-      sass:
-        specifier: ^1.101.0
-        version: 1.101.0
-      storybook:
-        specifier: ^8.6.18
-        version: 8.6.18
-      typescript:
-        specifier: ^5.2.2
-        version: 5.4.5
-      typescript-eslint:
-        specifier: ^7.9.0
-        version: 7.9.0(eslint@8.57.0)(typescript@5.4.5)
-      vite:
-        specifier: ^5.2.0
-        version: 5.2.11(sass@1.101.0)
-      vitest:
-        specifier: ^2.1.9
-        version: 2.1.9(sass@1.101.0)
-
-  .claude/worktrees/laughing-zhukovsky-fd49d3:
-    dependencies:
-      '@ark-ui/react':
-        specifier: ^5.37.2
-        version: 5.37.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      classnames:
-        specifier: ^2.5.1
-        version: 2.5.1
-      react:
-        specifier: ^19.2.7
-        version: 19.2.7
-      react-dom:
-        specifier: ^19.2.7
-        version: 19.2.7(react@19.2.7)
-    devDependencies:
-      '@eslint/js':
-        specifier: ^8.57.0
-        version: 8.57.0
-      '@storybook/addon-essentials':
-        specifier: ^8.6.18
-        version: 8.6.18(@types/react@19.2.17)(storybook@8.6.18)
-      '@storybook/addon-interactions':
-        specifier: ^8.6.18
-        version: 8.6.18(storybook@8.6.18)
-      '@storybook/blocks':
-        specifier: ^8.6.14
-        version: 8.6.14(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(storybook@8.6.18)
-      '@storybook/react':
-        specifier: ^8.6.18
-        version: 8.6.18(@storybook/test@8.6.18(storybook@8.6.18))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(storybook@8.6.18)(typescript@5.4.5)
-      '@storybook/react-vite':
-        specifier: ^8.6.18
-        version: 8.6.18(@storybook/test@8.6.18(storybook@8.6.18))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rollup@4.17.2)(storybook@8.6.18)(typescript@5.4.5)(vite@5.2.11(sass@1.101.0))
-      '@stylistic/eslint-plugin':
-        specifier: ^2.1.0
-        version: 2.1.0(eslint@8.57.0)(typescript@5.4.5)
-      '@types/react':
-        specifier: ^19.2.17
-        version: 19.2.17
-      '@types/react-dom':
-        specifier: ^19.2.3
-        version: 19.2.3(@types/react@19.2.17)
-      '@vitejs/plugin-react':
-        specifier: ^4.7.0
-        version: 4.7.0(vite@5.2.11(sass@1.101.0))
-      chromatic:
-        specifier: ^17.5.0
-        version: 17.5.0
-      eslint:
-        specifier: ^8.57.0
-        version: 8.57.0
-      eslint-config-preact:
-        specifier: ^1.4.0
-        version: 1.4.0(eslint@8.57.0)(typescript@5.4.5)
-      eslint-plugin-no-relative-import-paths:
-        specifier: ^1.5.4
-        version: 1.5.4
-      eslint-plugin-react:
-        specifier: ^7.34.1
-        version: 7.34.1(eslint@8.57.0)
-      eslint-plugin-simple-import-sort:
-        specifier: ^12.1.0
-        version: 12.1.0(eslint@8.57.0)
-      globals:
-        specifier: ^17.6.0
-        version: 17.6.0
+        specifier: ^17.7.0
+        version: 17.7.0
       sass:
         specifier: ^1.101.0
         version: 1.101.0
@@ -664,42 +579,36 @@ packages:
     engines: {node: '>= 10.0.0'}
     cpu: [arm]
     os: [linux]
-    libc: [glibc]
 
   '@parcel/watcher-linux-arm-musl@2.5.6':
     resolution: {integrity: sha512-Ve3gUCG57nuUUSyjBq/MAM0CzArtuIOxsBdQ+ftz6ho8n7s1i9E1Nmk/xmP323r2YL0SONs1EuwqBp2u1k5fxg==}
     engines: {node: '>= 10.0.0'}
     cpu: [arm]
     os: [linux]
-    libc: [musl]
 
   '@parcel/watcher-linux-arm64-glibc@2.5.6':
     resolution: {integrity: sha512-f2g/DT3NhGPdBmMWYoxixqYr3v/UXcmLOYy16Bx0TM20Tchduwr4EaCbmxh1321TABqPGDpS8D/ggOTaljijOA==}
     engines: {node: '>= 10.0.0'}
     cpu: [arm64]
     os: [linux]
-    libc: [glibc]
 
   '@parcel/watcher-linux-arm64-musl@2.5.6':
     resolution: {integrity: sha512-qb6naMDGlbCwdhLj6hgoVKJl2odL34z2sqkC7Z6kzir8b5W65WYDpLB6R06KabvZdgoHI/zxke4b3zR0wAbDTA==}
     engines: {node: '>= 10.0.0'}
     cpu: [arm64]
     os: [linux]
-    libc: [musl]
 
   '@parcel/watcher-linux-x64-glibc@2.5.6':
     resolution: {integrity: sha512-kbT5wvNQlx7NaGjzPFu8nVIW1rWqV780O7ZtkjuWaPUgpv2NMFpjYERVi0UYj1msZNyCzGlaCWEtzc+exjMGbQ==}
     engines: {node: '>= 10.0.0'}
     cpu: [x64]
     os: [linux]
-    libc: [glibc]
 
   '@parcel/watcher-linux-x64-musl@2.5.6':
     resolution: {integrity: sha512-1JRFeC+h7RdXwldHzTsmdtYR/Ku8SylLgTU/reMuqdVD7CtLwf0VR1FqeprZ0eHQkO0vqsbvFLXUmYm/uNKJBg==}
     engines: {node: '>= 10.0.0'}
     cpu: [x64]
     os: [linux]
-    libc: [musl]
 
   '@parcel/watcher-win32-arm64@2.5.6':
     resolution: {integrity: sha512-3ukyebjc6eGlw9yRt678DxVF7rjXatWiHvTXqphZLvo7aC5NdEgFufVwjFfY51ijYEWpXbqF5jtrK275z52D4Q==}
@@ -763,55 +672,46 @@ packages:
     resolution: {integrity: sha512-3reX2fUHqN7sffBNqmEyMQVj/CKhIHZd4y631duy0hZqI8Qoqf6lTtmAKvJFYa6bhU95B1D0WgzHkmTg33In0A==}
     cpu: [arm]
     os: [linux]
-    libc: [glibc]
 
   '@rollup/rollup-linux-arm-musleabihf@4.17.2':
     resolution: {integrity: sha512-uSqpsp91mheRgw96xtyAGP9FW5ChctTFEoXP0r5FAzj/3ZRv3Uxjtc7taRQSaQM/q85KEKjKsZuiZM3GyUivRg==}
     cpu: [arm]
     os: [linux]
-    libc: [musl]
 
   '@rollup/rollup-linux-arm64-gnu@4.17.2':
     resolution: {integrity: sha512-EMMPHkiCRtE8Wdk3Qhtciq6BndLtstqZIroHiiGzB3C5LDJmIZcSzVtLRbwuXuUft1Cnv+9fxuDtDxz3k3EW2A==}
     cpu: [arm64]
     os: [linux]
-    libc: [glibc]
 
   '@rollup/rollup-linux-arm64-musl@4.17.2':
     resolution: {integrity: sha512-NMPylUUZ1i0z/xJUIx6VUhISZDRT+uTWpBcjdv0/zkp7b/bQDF+NfnfdzuTiB1G6HTodgoFa93hp0O1xl+/UbA==}
     cpu: [arm64]
     os: [linux]
-    libc: [musl]
 
   '@rollup/rollup-linux-powerpc64le-gnu@4.17.2':
     resolution: {integrity: sha512-T19My13y8uYXPw/L/k0JYaX1fJKFT/PWdXiHr8mTbXWxjVF1t+8Xl31DgBBvEKclw+1b00Chg0hxE2O7bTG7GQ==}
     cpu: [ppc64]
     os: [linux]
-    libc: [glibc]
 
   '@rollup/rollup-linux-riscv64-gnu@4.17.2':
     resolution: {integrity: sha512-BOaNfthf3X3fOWAB+IJ9kxTgPmMqPPH5f5k2DcCsRrBIbWnaJCgX2ll77dV1TdSy9SaXTR5iDXRL8n7AnoP5cg==}
     cpu: [riscv64]
     os: [linux]
-    libc: [glibc]
 
   '@rollup/rollup-linux-s390x-gnu@4.17.2':
     resolution: {integrity: sha512-W0UP/x7bnn3xN2eYMql2T/+wpASLE5SjObXILTMPUBDB/Fg/FxC+gX4nvCfPBCbNhz51C+HcqQp2qQ4u25ok6g==}
     cpu: [s390x]
     os: [linux]
-    libc: [glibc]
 
   '@rollup/rollup-linux-x64-gnu@4.17.2':
     resolution: {integrity: sha512-Hy7pLwByUOuyaFC6mAr7m+oMC+V7qyifzs/nW2OJfC8H4hbCzOX07Ov0VFk/zP3kBsELWNFi7rJtgbKYsav9QQ==}
     cpu: [x64]
     os: [linux]
-    libc: [glibc]
 
   '@rollup/rollup-linux-x64-musl@4.17.2':
     resolution: {integrity: sha512-h1+yTWeYbRdAyJ/jMiVw0l6fOOm/0D1vNLui9iPuqgRGnXA0u21gAqOyB5iHjlM9MMfNOm9RHCQ7zLIzT0x11Q==}
     cpu: [x64]
     os: [linux]
-    libc: [musl]
 
   '@rollup/rollup-win32-arm64-msvc@4.17.2':
     resolution: {integrity: sha512-tmdtXMfKAjy5+IQsVtDiCfqbynAQE/TQRpWdVataHmhMb9DCoJxp9vLcCBjEQWMiUYxO1QprH/HbY9ragCEFLA==}
@@ -2079,8 +1979,8 @@ packages:
     resolution: {integrity: sha512-AhO5QUcj8llrbG09iWhPU2B204J1xnPeL8kQmVorSsy+Sjj1sk8gIyh6cUocGmH4L0UuhAJy+hJMRA4mgA4mFQ==}
     engines: {node: '>=8'}
 
-  globals@17.6.0:
-    resolution: {integrity: sha512-sepffkT8stwnIYbsMBpoCHJuJM5l98FUF2AnE07hfvE0m/qp3R586hw4jF4uadbhvg1ooIdzuu7CsfD2jzCaNA==}
+  globals@17.7.0:
+    resolution: {integrity: sha512-Czmyns5dUsq4seFBR/Kdydhmo8y9kC79hiSkPn0YcGtNnYWnrgt0vjrSjx9tspoDGWm2CMarffRuLjM4xUz8xg==}
     engines: {node: '>=18'}
 
   globalthis@1.0.4:
@@ -5587,7 +5487,7 @@ snapshots:
     dependencies:
       type-fest: 0.20.2
 
-  globals@17.6.0: {}
+  globals@17.7.0: {}
 
   globalthis@1.0.4:
     dependencies:
