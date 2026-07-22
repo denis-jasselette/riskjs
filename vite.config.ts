@@ -8,11 +8,12 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": "/src",
+      "@server": "/server/src",
     },
   },
   test: {
     environment: 'node',
     globals: true,
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'server/**/*.test.ts'],
   },
 })

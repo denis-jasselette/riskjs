@@ -11,6 +11,7 @@ export type HandleStartParams = {
 
 export type GameOverProps = {
   handleStart: (params: HandleStartParams) => void
+  onGoOnline: () => void
 }
 
 const GameOver = (props: GameOverProps) => {
@@ -98,6 +99,7 @@ const GameOver = (props: GameOverProps) => {
             &nbsp;
             Start game
           </button>
+          <button type="button" className="btn" onClick={props.onGoOnline}>Play online instead</button>
           <SupportButton />
         </footer>
       </form>

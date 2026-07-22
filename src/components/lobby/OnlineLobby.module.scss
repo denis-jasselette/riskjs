@@ -1,0 +1,108 @@
+@use '@/theme/colors';
+
+.Modal {
+  &::backdrop {
+    backdrop-filter: blur(6px);
+  }
+  margin: 40px;
+  border-radius: 20px;
+  border: 1px solid var(--modal-border-color);
+  background-color: var(--modal-background-color);
+  box-shadow: 0px 5px 10px 5px rgba(0, 0, 0, .7);
+  outline: none;
+  overflow-y: auto;
+  max-height: calc(100vh - 32px);
+  width: min(420px, calc(100vw - 24px));
+
+  header {
+    padding: 20px;
+  }
+
+  header h1 {
+    margin: 0;
+    font-size: 1.5em;
+  }
+
+  main {
+    padding: 20px;
+    padding-top: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.75em 1.5em;
+    align-items: center;
+  }
+
+  footer {
+    padding: 20px;
+    padding-top: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .5em;
+  }
+
+  @media (max-width: 640px) {
+    margin: 12px;
+    border-radius: 14px;
+
+    header {
+      padding: 14px;
+    }
+
+    header h1 {
+      font-size: 1.2em;
+    }
+
+    main {
+      padding: 14px;
+      padding-top: 0;
+      grid-template-columns: 1fr;
+      gap: 0.5em 1em;
+    }
+
+    footer {
+      padding: 14px;
+      padding-top: 0;
+    }
+  }
+}
+
+.Intro {
+  grid-column: 1 / -1;
+}
+
+.RoomCode {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: 2em;
+  letter-spacing: 0.2em;
+  font-weight: 700;
+  margin: 0.25em 0;
+}
+
+.SeatList {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+}
+
+.Seat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5em 0.8em;
+  border-radius: 8px;
+  background-color: var(--text-contrast-color);
+
+  &[data-open="true"] {
+    opacity: 0.6;
+    font-style: italic;
+  }
+}
+
+.ErrorText {
+  grid-column: 1 / -1;
+  color: var(--error-color, #e05252);
+  text-align: center;
+}
