@@ -1,6 +1,7 @@
 import { useCallback, useContext, useState } from 'react'
 
 import ActionMenu from '@/components/actionMenu/ActionMenu'
+import CardHand from '@/components/actionMenu/CardHand'
 import Map from '@/components/board/Map'
 import DiceResult, { DiceResultData } from '@/components/DiceResult'
 import style from '@/components/Game.module.scss'
@@ -81,6 +82,7 @@ const Game = () => {
   return (
     <div className={style.Game} onClick={handleClickOutside}>
       <PlayerStatus />
+      <CardHand />
       <ActionMenu
         handleEndPhase={handleEndPhase}
         attackDiceCount={attackDiceCount}

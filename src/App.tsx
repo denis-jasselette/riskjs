@@ -19,7 +19,7 @@ export function App() {
   const [gameState, setGameState] = useState(GameLogic.defaultGameState(mapConfig))
   const [menu, setMenu] = useState<'local' | 'online'>('local')
 
-  const handleStart = ({ playerCount, blizzards, fog }: HandleStartParams) => {
+  const handleStart = ({ playerCount, blizzards, fog, cardBonus }: HandleStartParams) => {
     const availableColors = [...PlayerColorValues]
     shuffle(availableColors)
     const playerConfigs: PlayerConfig[] = []
@@ -29,7 +29,7 @@ export function App() {
         currentUser: false, name: color, color: color, human: true, position: i + 1,
       })
     }
-    setGameState(GameLogic.initState(mapConfig, playerConfigs, blizzards, false, fog))
+    setGameState(GameLogic.initState(mapConfig, playerConfigs, blizzards, false, fog, cardBonus))
   }
 
   const handleGameStarted = (startedGameState: GameState) => {

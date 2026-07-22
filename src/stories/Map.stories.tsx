@@ -60,6 +60,11 @@ function buildFixedGameState(): GameState {
     currentPlayer: 'white',
     currentPhase: 'deploy',
     troopsToDeploy: 3,
+    deck: [],
+    playerCards: {},
+    conqueredTerritoryThisTurn: false,
+    tradeCount: 0,
+    cardBonusMode: 'fixed',
   }
 }
 

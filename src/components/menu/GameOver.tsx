@@ -2,11 +2,13 @@ import { useEffect, useRef } from 'react'
 
 import style from '@/components/menu/GameOver.module.scss'
 import SupportButton from '@/components/menu/SupportButton'
+import { CardBonusMode } from '@/models/CardBonusMode'
 
 export type HandleStartParams = {
   playerCount: number
   blizzards: boolean
   fog: boolean
+  cardBonus: CardBonusMode
 }
 
 export type GameOverProps = {
@@ -16,6 +18,7 @@ export type GameOverProps = {
 
 const GameOver = (props: GameOverProps) => {
   const playerCountField = useRef<HTMLInputElement>(null)
+  const cardBonusField = useRef<HTMLSelectElement>(null)
   const blizzardsField = useRef<HTMLInputElement>(null)
   const fogField = useRef<HTMLInputElement>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -26,10 +29,11 @@ const GameOver = (props: GameOverProps) => {
   }, [])
 
   const handleStart = () => {
-    const params = {
+    const params: HandleStartParams = {
       playerCount: parseInt(playerCountField.current!.value),
       blizzards: blizzardsField.current!.checked,
       fog: fogField.current!.checked,
+      cardBonus: cardBonusField.current!.value === 'Progressive' ? 'progressive' : 'fixed',
     }
     props.handleStart(params)
   }
@@ -52,7 +56,7 @@ const GameOver = (props: GameOverProps) => {
           </div>
           <div className="form-group">
             <label className="form-label" htmlFor="card_bonus">Card bonus</label>
-            <select id="card_bonus">
+            <select ref={cardBonusField} id="card_bonus">
               <option>Fixed</option>
               <option>Progressive</option>
             </select>
