@@ -1,10 +1,11 @@
-import { useCallback, useContext, useState } from 'react'
+import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 
 import ActionMenu from '@/components/actionMenu/ActionMenu'
 import Map from '@/components/board/Map'
 import DiceResult, { DiceResultData } from '@/components/DiceResult'
 import style from '@/components/Game.module.scss'
 import GameContext from '@/components/GameContext'
+import Notification, { NotificationData } from '@/components/Notification'
 import PlayerStatus from '@/components/playerStatus/PlayerStatus'
 import GameController from '@/controllers/GameController'
 
@@ -13,12 +14,60 @@ const Game = () => {
   const [attackDiceCount, setAttackDiceCount] = useState<number>(1)
   const [attackResult, setAttackResult] = useState<DiceResultData | null>(null)
   const [isZoomed, setIsZoomed] = useState(false)
+  const [notification, setNotification] = useState<NotificationData | null>(null)
 
   const handleScaleChange = useCallback((scale: number) => {
     setIsZoomed(scale > 1.5)
   }, [])
   const { gameState, setGameState } = useContext(GameContext)
   const gameController = new GameController(gameState)
+
+  const prevPlayerRef = useRef<string | null>(null)
+  const prevTerritoryCountsRef = useRef<Record<string, number>>({})
+
+  useEffect(() => {
+    const prevPlayer = prevPlayerRef.current
+    const currentPlayer = gameState.currentPlayer
+
+    // Build a map of territory counts per player
+    const territoryCounts: Record<string, number> = {}
+    for (const playerConfig of gameState.playerConfigs) {
+      territoryCounts[playerConfig.color] = gameController.getPlayerTerritoryTotal(playerConfig.color)
+    }
+
+    // Detect eliminations: any player that had territories before but now has 0
+    const prevCounts = prevTerritoryCountsRef.current
+    for (const playerConfig of gameState.playerConfigs) {
+      const prev = prevCounts[playerConfig.color]
+      const current = territoryCounts[playerConfig.color]
+      if (prev !== undefined && prev > 0 && current === 0) {
+        setNotification({
+          message: `${playerConfig.name} has been eliminated!`,
+          type: 'elimination',
+          playerColor: playerConfig.color,
+        })
+        prevTerritoryCountsRef.current = territoryCounts
+        prevPlayerRef.current = currentPlayer
+        return
+      }
+    }
+
+    prevTerritoryCountsRef.current = territoryCounts
+
+    // Detect turn change (only after the game state is initialised — prevPlayer is set)
+    if (prevPlayer !== null && prevPlayer !== currentPlayer) {
+      const playerConfig = gameState.playerConfigs.find(p => p.color === currentPlayer)
+      if (playerConfig) {
+        setNotification({
+          message: `It's ${playerConfig.name}'s turn`,
+          type: 'turn',
+          playerColor: playerConfig.color,
+        })
+      }
+    }
+
+    prevPlayerRef.current = currentPlayer
+  }, [gameState.currentPlayer, gameState.troops])
 
   const maxAttackDice = selectedTerritory && gameState.currentPhase === 'attack'
     ? Math.min(gameController.getTroopCount(selectedTerritory) - 1, 3)
@@ -95,6 +144,12 @@ const Game = () => {
       />
       {attackResult && (
         <DiceResult result={attackResult} onDismiss={() => setAttackResult(null)} />
+      )}
+      {notification && (
+        <Notification
+          notification={notification}
+          onDismiss={() => setNotification(null)}
+        />
       )}
     </div>
   )
