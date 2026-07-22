@@ -9,7 +9,7 @@ import { useLobbySession } from '@/hooks/useLobbySession'
 import GameState from '@/models/GameState'
 
 export type OnlineLobbyProps = {
-  onGameStarted: (gameState: GameState) => void
+  onGameStarted: (gameState: GameState, viewingPlayer: string) => void
   onExit: () => void
 }
 
@@ -36,7 +36,7 @@ const OnlineLobby = (props: OnlineLobbyProps) => {
   const handleViewBoard = () => {
     if (!state.started) return
     const mySeat = state.started.seats.find(seat => seat.index === state.seatIndex)
-    props.onGameStarted({ ...state.started.gameState, userPlayer: mySeat?.color ?? state.started.gameState.userPlayer })
+    props.onGameStarted(state.started.gameState, mySeat?.color ?? state.started.gameState.currentPlayer)
   }
 
   const pending = state.status === 'connecting'

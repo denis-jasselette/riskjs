@@ -32,10 +32,10 @@ export default class GameController {
     return this.mapController.areAdjacent(a, b, { differentOwner: true })
   }
 
-  isSelectable(territory: string, selectedTerritory: string | null = null): boolean {
+  isSelectable(territory: string, selectedTerritory: string | null, viewingPlayer: string): boolean {
     if (this.mapController.isTerritoryBlizzard(territory))
       return false
-    if (this.gameState.currentPlayer !== this.gameState.userPlayer)
+    if (this.gameState.currentPlayer !== viewingPlayer)
       return false
     if (selectedTerritory === territory)
       return true

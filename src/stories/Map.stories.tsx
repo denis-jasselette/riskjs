@@ -56,7 +56,6 @@ function buildFixedGameState(): GameState {
     troops,
     blizzards: [],
     fogEnabled: false,
-    userPlayer: 'white',
     currentPlayer: 'white',
     currentPhase: 'deploy',
     troopsToDeploy: 3,
@@ -73,7 +72,7 @@ const FIXED_STATE = buildFixedGameState()
 function GameContextWrapper({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState(FIXED_STATE)
   return (
-    <GameContext.Provider value={{ gameState: state, setGameState: setState }}>
+    <GameContext.Provider value={{ gameState: state, setGameState: setState, viewingPlayer: state.currentPlayer }}>
       {children}
     </GameContext.Provider>
   )

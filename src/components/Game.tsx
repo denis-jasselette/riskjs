@@ -18,7 +18,7 @@ const Game = () => {
   const handleScaleChange = useCallback((scale: number) => {
     setIsZoomed(scale > 1.5)
   }, [])
-  const { gameState, setGameState } = useContext(GameContext)
+  const { gameState, setGameState, viewingPlayer } = useContext(GameContext)
   const gameController = new GameController(gameState)
 
   const maxAttackDice = selectedTerritory && gameState.currentPhase === 'attack'
@@ -38,7 +38,7 @@ const Game = () => {
   }
 
   const handleClickTerritory = (territory: string) => {
-    if (!gameController.isSelectable(territory, selectedTerritory))
+    if (!gameController.isSelectable(territory, selectedTerritory ?? null, viewingPlayer))
       return
 
     if (gameState.currentPhase === 'deploy') {

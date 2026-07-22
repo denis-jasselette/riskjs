@@ -54,7 +54,6 @@ function buildGameState(): GameState {
   gs.playerConfigs = [player1, player2]
   gs.blizzards = []
   gs.currentPlayer = 'red'
-  gs.userPlayer = 'red'
   gs.currentPhase = 'deploy'
   gs.troopsToDeploy = 3
   gs.troops = [

@@ -15,10 +15,10 @@ const CARD_LABELS: Record<CardType, string> = {
 // Minimal hand + trade-in UI: lets the current player see their held cards and,
 // once a valid 3-card set is selected, trade them in for bonus deploy troops.
 const CardHand = () => {
-  const { gameState, setGameState } = useContext(GameContext)
+  const { gameState, setGameState, viewingPlayer } = useContext(GameContext)
   const [selected, setSelected] = useState<number[]>([])
 
-  const isCurrentUsersTurn = gameState.userPlayer === gameState.currentPlayer
+  const isCurrentUsersTurn = viewingPlayer === gameState.currentPlayer
   const hand = gameState.playerCards[gameState.currentPlayer] ?? []
 
   if (!isCurrentUsersTurn || hand.length === 0)

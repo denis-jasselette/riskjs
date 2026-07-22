@@ -12,7 +12,6 @@ export default class GameState {
   troops: TroopState[]
   blizzards: string[]
   currentPlayer: string
-  userPlayer: string
   currentPhase: GamePhase
 
   /* TODO */
@@ -38,7 +37,6 @@ export default class GameState {
     this.playerConfigs = []
     this.troops = []
     this.blizzards = []
-    this.userPlayer = ''
     this.currentPlayer = ''
     this.currentPhase = 'deploy'
     this.fogEnabled = false

@@ -11,14 +11,14 @@ export interface PlayerInfoProps {
 }
 
 const PlayerInfo = (props: PlayerInfoProps) => {
-  const { gameState } = useContext(GameContext)
+  const { gameState, viewingPlayer } = useContext(GameContext)
   const gameController = new GameController(gameState)
 
   return (
     <div
       className={style.PlayerInfo}
       data-is-current-player={gameState.currentPlayer === props.playerConfig.color}
-      data-is-user-player={gameState.userPlayer === props.playerConfig.color}
+      data-is-user-player={viewingPlayer === props.playerConfig.color}
       data-has-player-lost={gameController.hasPlayerLost(props.playerConfig.color)}
       data-player={props.playerConfig.color}
       data-human-player={props.playerConfig.human}
@@ -29,7 +29,7 @@ const PlayerInfo = (props: PlayerInfoProps) => {
           isHumanPlayer={props.playerConfig.human}
           hasPlayerLost={gameController.hasPlayerLost(props.playerConfig.color)}
         />
-        {gameState.userPlayer === props.playerConfig.color
+        {viewingPlayer === props.playerConfig.color
         && <div className={style.PlayerInfoUser}>You</div>}
       </div>
 
