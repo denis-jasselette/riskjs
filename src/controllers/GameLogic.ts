@@ -54,8 +54,24 @@ export default class GameLogic {
     return [troops, blizzards]
   }
 
-  static initState(mapConfig: MapConfig, playerConfigs: PlayerConfig[], blizzardsEnabled: boolean, gameOver: boolean = false, fogEnabled: boolean = false): GameState {
+  static assignCapitals(troops: TroopState[], playerConfigs: PlayerConfig[]): Record<string, string> {
+    const capitals: Record<string, string> = {}
+    for (const player of playerConfigs) {
+      const playerTerritories = troops
+        .filter(t => t.player.color === player.color)
+        .map(t => t.territory)
+      if (playerTerritories.length > 0) {
+        const randomIndex = Math.floor(Math.random() * playerTerritories.length)
+        capitals[player.color] = playerTerritories[randomIndex]
+      }
+    }
+    return capitals
+  }
+
+  static initState(mapConfig: MapConfig, playerConfigs: PlayerConfig[], blizzardsEnabled: boolean, gameOver: boolean = false, fogEnabled: boolean = false, capitalModeEnabled: boolean = false): GameState {
     const [troops, blizzards] = this.autoSetupTroops(mapConfig, playerConfigs, blizzardsEnabled)
+
+    const capitals = capitalModeEnabled ? this.assignCapitals(troops, playerConfigs) : undefined
 
     const state: GameState = {
       gameOver: gameOver,
@@ -68,6 +84,9 @@ export default class GameLogic {
       currentPhase: 'deploy',
       fogEnabled: fogEnabled,
       troopsToDeploy: 0,
+      capitalModeEnabled: capitalModeEnabled,
+      capitals: capitals,
+      eliminatedByCapture: [],
     }
     if (gameOver)
       return state
