@@ -199,3 +199,10 @@ initiates an attack while still taking its other turn actions normally.
   a meaningful troop advantage) rather than a precisely specified formula,
   consistent with the spec calling this "a single deterministic evaluation,"
   not a tuned/benchmarked algorithm.
+- This feature's capital-mode-aware behavior (User Story 2's third scenario,
+  FR-008) depends on the separate Capital Mode feature (012) for capital
+  assignment/ownership tracking and the "owns all capitals" fact. A prior
+  capital-mode implementation existed on a branch that was never merged to
+  `main` — capital mode is not currently shipped; 012 (re)builds it from
+  scratch. This feature's capital-aware bot behavior has no effect until 012
+  exists.

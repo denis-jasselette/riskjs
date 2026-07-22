@@ -42,4 +42,9 @@
   interface a bot plugs into; does not depend on the not-yet-specified
   disconnect/timeout-takeover feature, since this feature only builds the
   decision logic, not the seat-assignment trigger.
+- Updated 2026-07-23: added an explicit dependency note on feature 012
+  (Capital Mode) for this spec's capital-aware Medium-tier behavior
+  (FR-008). Capital mode was previously assumed shipped based on a
+  `git log --all` hit that turned out to be on an unmerged branch — it does
+  not currently exist in `main`; 012 rebuilds it from scratch.
 - All checklist items pass on first pass.
