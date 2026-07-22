@@ -9,9 +9,9 @@ export interface PhaseEndButtonProps {
 }
 
 const PhaseEndButton = (props: PhaseEndButtonProps) => {
-  const { gameState } = useContext(GameContext)
+  const { gameState, viewingPlayer } = useContext(GameContext)
 
-  if (gameState.userPlayer !== gameState.currentPlayer)
+  if (viewingPlayer !== gameState.currentPlayer)
     return (
       <button disabled={true}>
         Opponent&apos;s turn

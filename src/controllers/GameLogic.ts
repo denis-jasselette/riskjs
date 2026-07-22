@@ -63,7 +63,6 @@ export default class GameLogic {
       playerConfigs: playerConfigs,
       troops: troops,
       blizzards: blizzards,
-      userPlayer: playerConfigs[0].color,
       currentPlayer: playerConfigs[0].color,
       currentPhase: 'deploy',
       fogEnabled: fogEnabled,

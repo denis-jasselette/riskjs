@@ -11,7 +11,7 @@ export interface TerritoriesComponentProps {
 }
 
 const Territories = (props: TerritoriesComponentProps) => {
-  const { gameState } = useContext(GameContext)
+  const { gameState, viewingPlayer } = useContext(GameContext)
   const gameController = new GameController(gameState)
 
   const compareFn = (a: string, b: string): number => {
@@ -42,7 +42,7 @@ const Territories = (props: TerritoriesComponentProps) => {
             troopState={troopState}
             isBlizzard={isBlizzard}
             isSelected={isSelected}
-            isSelectable={gameController.isSelectable(territory, props.selectedTerritory)}
+            isSelectable={gameController.isSelectable(territory, props.selectedTerritory ?? null, viewingPlayer)}
             isInFog={isInFog}
             handleClick={props.handleClick}
           />
