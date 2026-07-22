@@ -1,5 +1,7 @@
 import GameController from '@/controllers/GameController'
 import { distribute, shuffle } from '@/lib/Random'
+import { CardBonusMode } from '@/models/CardBonusMode'
+import { CardType } from '@/models/CardType'
 import GameState from '@/models/GameState'
 import MapConfig from '@/models/MapConfig'
 import PlayerConfig from '@/models/PlayerConfig'
@@ -54,8 +56,24 @@ export default class GameLogic {
     return [troops, blizzards]
   }
 
-  static initState(mapConfig: MapConfig, playerConfigs: PlayerConfig[], blizzardsEnabled: boolean, gameOver: boolean = false, fogEnabled: boolean = false): GameState {
+  // The classic Risk card deck: one card per territory (per mapConfig.cards.territories)
+  // plus a handful of wildcards, shuffled into a persistent draw pile.
+  static buildCardDeck(mapConfig: MapConfig): CardType[] {
+    const deck: CardType[] = [
+      ...Object.values(mapConfig.cards.territories),
+      ...Array(mapConfig.cards.wildcards).fill('wildcard' as CardType),
+    ]
+    shuffle(deck)
+    return deck
+  }
+
+  static initState(mapConfig: MapConfig, playerConfigs: PlayerConfig[], blizzardsEnabled: boolean, gameOver: boolean = false, fogEnabled: boolean = false, cardBonusMode: CardBonusMode = 'fixed'): GameState {
     const [troops, blizzards] = this.autoSetupTroops(mapConfig, playerConfigs, blizzardsEnabled)
+
+    const playerCards: Record<string, CardType[]> = {}
+    playerConfigs.forEach((player) => {
+      playerCards[player.color] = []
+    })
 
     const state: GameState = {
       gameOver: gameOver,
@@ -67,6 +85,11 @@ export default class GameLogic {
       currentPhase: 'deploy',
       fogEnabled: fogEnabled,
       troopsToDeploy: 0,
+      deck: this.buildCardDeck(mapConfig),
+      playerCards: playerCards,
+      conqueredTerritoryThisTurn: false,
+      tradeCount: 0,
+      cardBonusMode: cardBonusMode,
     }
     if (gameOver)
       return state

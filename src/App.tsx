@@ -25,7 +25,7 @@ export function App() {
   const [onlineViewingPlayer, setOnlineViewingPlayer] = useState<string | null>(null)
   const viewingPlayer = onlineViewingPlayer ?? gameState.currentPlayer
 
-  const handleStart = ({ playerCount, blizzards, fog }: HandleStartParams) => {
+  const handleStart = ({ playerCount, blizzards, fog, cardBonus }: HandleStartParams) => {
     const availableColors = [...PlayerColorValues]
     shuffle(availableColors)
     const playerConfigs: PlayerConfig[] = []
@@ -36,7 +36,7 @@ export function App() {
       })
     }
     setOnlineViewingPlayer(null)
-    setGameState(GameLogic.initState(mapConfig, playerConfigs, blizzards, false, fog))
+    setGameState(GameLogic.initState(mapConfig, playerConfigs, blizzards, false, fog, cardBonus))
   }
 
   const handleGameStarted = (startedGameState: GameState, startedViewingPlayer: string) => {

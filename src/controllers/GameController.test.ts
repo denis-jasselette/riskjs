@@ -62,6 +62,11 @@ function buildGameState(): GameState {
     { territory: 'C', count: 4, player: player2 },
     { territory: 'D', count: 2, player: player2 },
   ]
+  gs.deck = []
+  gs.playerCards = { red: [], blue: [] }
+  gs.conqueredTerritoryThisTurn = false
+  gs.tradeCount = 0
+  gs.cardBonusMode = 'fixed'
   return gs
 }
 
@@ -252,6 +257,186 @@ describe('GameController', () => {
     it('stops when one side is wiped out', () => {
       const { attackerLosses, defenderLosses } = controller.attackRng(2, 2)
       expect(attackerLosses === 2 || defenderLosses === 2).toBe(true)
+    })
+  })
+
+  // --------------------------------------------------------
+  describe('card award on conquest', () => {
+    it('marks conqueredTerritoryThisTurn when an attack captures a territory', () => {
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [], defenderDice: [] })
+      expect(controller.gameState.conqueredTerritoryThisTurn).toBe(false)
+
+      controller.attack(3, 'B', 'C')
+
+      expect(controller.gameState.conqueredTerritoryThisTurn).toBe(true)
+    })
+
+    it('does not mark conqueredTerritoryThisTurn when the attack fails', () => {
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 3, defenderLosses: 0, attackerDice: [], defenderDice: [] })
+
+      controller.attack(3, 'B', 'C')
+
+      expect(controller.gameState.conqueredTerritoryThisTurn).toBe(false)
+    })
+
+    it('awards exactly one card at end of turn when the player conquered a territory', () => {
+      controller.gameState.deck = ['infantry', 'cavalry', 'artillery']
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [], defenderDice: [] })
+      controller.attack(3, 'B', 'C')
+
+      controller.fortify(1, 'A', 'B') // ends red's turn -> awards card, advances to blue
+
+      expect(controller.gameState.playerCards.red).toHaveLength(1)
+      expect(controller.gameState.deck).toHaveLength(2)
+    })
+
+    it('does not award a card at end of turn when no territory was conquered', () => {
+      controller.gameState.deck = ['infantry', 'cavalry', 'artillery']
+
+      controller.fortify(1, 'A', 'B') // ends red's turn without any attack
+
+      expect(controller.gameState.playerCards.red).toHaveLength(0)
+      expect(controller.gameState.deck).toHaveLength(3)
+    })
+
+    it('resets conqueredTerritoryThisTurn for the next player', () => {
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [], defenderDice: [] })
+      controller.attack(3, 'B', 'C')
+      controller.fortify(1, 'A', 'B')
+
+      expect(controller.gameState.conqueredTerritoryThisTurn).toBe(false)
+    })
+
+    it('does not draw a card (and does not throw) when the deck is empty', () => {
+      controller.gameState.deck = []
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [], defenderDice: [] })
+      controller.attack(3, 'B', 'C')
+
+      controller.fortify(1, 'A', 'B')
+
+      expect(controller.gameState.playerCards.red).toHaveLength(0)
+    })
+  })
+
+  // --------------------------------------------------------
+  describe('isValidCardSet()', () => {
+    it('accepts three of the same type', () => {
+      expect(controller.isValidCardSet(['infantry', 'infantry', 'infantry'])).toBe(true)
+    })
+
+    it('accepts one of each non-wildcard type', () => {
+      expect(controller.isValidCardSet(['infantry', 'cavalry', 'artillery'])).toBe(true)
+    })
+
+    it('accepts two of one type plus a wildcard', () => {
+      expect(controller.isValidCardSet(['infantry', 'infantry', 'wildcard'])).toBe(true)
+    })
+
+    it('accepts three wildcards', () => {
+      expect(controller.isValidCardSet(['wildcard', 'wildcard', 'wildcard'])).toBe(true)
+    })
+
+    it('rejects two of one type plus one of a different type (no wildcard)', () => {
+      expect(controller.isValidCardSet(['infantry', 'infantry', 'cavalry'])).toBe(false)
+    })
+
+    it('rejects sets that are not exactly 3 cards', () => {
+      expect(controller.isValidCardSet(['infantry', 'infantry'])).toBe(false)
+      expect(controller.isValidCardSet(['infantry', 'infantry', 'infantry', 'cavalry'])).toBe(false)
+    })
+  })
+
+  // --------------------------------------------------------
+  describe('getCardTradeBonus()', () => {
+    it('returns a flat bonus in fixed mode regardless of trade number', () => {
+      controller.gameState.cardBonusMode = 'fixed'
+      expect(controller.getCardTradeBonus(1)).toBe(4)
+      expect(controller.getCardTradeBonus(1)).toBe(controller.getCardTradeBonus(10))
+    })
+
+    it('follows the progressive sequence: 4, 6, 8, 10, 12, 15', () => {
+      controller.gameState.cardBonusMode = 'progressive'
+      expect(controller.getCardTradeBonus(1)).toBe(4)
+      expect(controller.getCardTradeBonus(2)).toBe(6)
+      expect(controller.getCardTradeBonus(3)).toBe(8)
+      expect(controller.getCardTradeBonus(4)).toBe(10)
+      expect(controller.getCardTradeBonus(5)).toBe(12)
+      expect(controller.getCardTradeBonus(6)).toBe(15)
+    })
+
+    it('adds 5 per trade after the 6th in progressive mode', () => {
+      controller.gameState.cardBonusMode = 'progressive'
+      expect(controller.getCardTradeBonus(7)).toBe(20)
+      expect(controller.getCardTradeBonus(8)).toBe(25)
+      expect(controller.getCardTradeBonus(9)).toBe(30)
+    })
+  })
+
+  // --------------------------------------------------------
+  describe('tradeCards()', () => {
+    beforeEach(() => {
+      controller.gameState.cardBonusMode = 'progressive'
+      controller.gameState.playerCards.red = ['infantry', 'cavalry', 'artillery', 'infantry']
+    })
+
+    it('removes the traded cards from the hand', () => {
+      controller.tradeCards([0, 1, 2])
+      expect(controller.gameState.playerCards.red).toEqual(['infantry'])
+    })
+
+    it('adds the trade bonus to troopsToDeploy', () => {
+      const before = controller.gameState.troopsToDeploy
+      controller.tradeCards([0, 1, 2])
+      expect(controller.gameState.troopsToDeploy).toBe(before + 4)
+    })
+
+    it('increments the global trade count', () => {
+      controller.tradeCards([0, 1, 2])
+      expect(controller.gameState.tradeCount).toBe(1)
+    })
+
+    it('increments the global trade count across different players', () => {
+      controller.gameState.playerCards.blue = ['cavalry', 'cavalry', 'cavalry']
+
+      controller.tradeCards([0, 1, 2]) // red trades -> trade #1
+
+      controller.gameState.currentPlayer = 'blue'
+      controller.tradeCards([0, 1, 2]) // blue trades -> trade #2
+
+      expect(controller.gameState.tradeCount).toBe(2)
+      // Second trade (progressive) should award 6, not 4
+      expect(controller.gameState.troopsToDeploy).toBe(3 + 4 + 6)
+    })
+
+    it('rejects an invalid set and leaves state unchanged', () => {
+      controller.gameState.playerCards.red = ['infantry', 'infantry', 'cavalry']
+      const before = [...controller.gameState.playerCards.red]
+      const troopsBefore = controller.gameState.troopsToDeploy
+
+      controller.tradeCards([0, 1, 2])
+
+      expect(controller.gameState.playerCards.red).toEqual(before)
+      expect(controller.gameState.troopsToDeploy).toBe(troopsBefore)
+      expect(controller.gameState.tradeCount).toBe(0)
+    })
+
+    it('rejects a selection that is not exactly 3 distinct indices', () => {
+      const troopsBefore = controller.gameState.troopsToDeploy
+      controller.tradeCards([0, 1])
+      expect(controller.gameState.troopsToDeploy).toBe(troopsBefore)
+      expect(controller.gameState.tradeCount).toBe(0)
+    })
+  })
+
+  // --------------------------------------------------------
+  describe('getPlayerCardTotal()', () => {
+    it('returns the number of cards a player holds', () => {
+      controller.gameState.playerCards.red = ['infantry', 'wildcard']
+      expect(controller.getPlayerCardTotal('red')).toBe(2)
+    })
+
+    it('returns 0 for a player with no cards', () => {
+      expect(controller.getPlayerCardTotal('blue')).toBe(0)
     })
   })
 })
