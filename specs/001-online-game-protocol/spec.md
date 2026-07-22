@@ -120,6 +120,37 @@ without needing to rejoin or restart.
 
 ---
 
+### User Story 5 - A defeated player is told they're out (Priority: P2)
+
+The moment a player loses their last territory, they are individually and
+promptly informed that they've been defeated — independent of whether the
+overall game continues for the remaining players.
+
+**Why this priority**: Without this, a defeated player's client has no signal
+that their part in the game is over; they would only ever learn indirectly
+(e.g. by noticing they can no longer act), which is a poor and confusing
+experience. Depends on the same action/outcome delivery mechanism as the
+other stories, so it's sequenced after the core turn-action flow but is not
+optional polish.
+
+**Independent Test**: Reduce a connected player to zero territories via a
+conquest and confirm that specific player receives a personal notification of
+their own defeat, distinct from the shared action outcome of the attack that
+defeated them and from any later whole-game end notification.
+
+**Acceptance Scenarios**:
+
+1. **Given** a player loses their last territory to another player's attack,
+   **When** that capture resolves, **Then** the defeated player individually
+   receives notice of their own defeat, separate from the broadcast outcome
+   of the attack itself.
+2. **Given** a player has been individually defeated but the overall game
+   continues for other players, **When** the game later ends for everyone,
+   **Then** the already-defeated player's earlier personal notice is not
+   confused with or replaced by that later whole-game end notification.
+
+---
+
 ### Edge Cases
 
 - What happens when a player disconnects in the middle of submitting an action
@@ -137,8 +168,8 @@ without needing to rejoin or restart.
 ### Functional Requirements
 
 - **FR-001**: System MUST validate every submitted player action (deploy,
-  attack, fortify, trade cards, end phase) against the current game's rules and
-  turn/phase state before applying any effect.
+  attack, fortify, trade cards, place capital, resign, end phase) against the
+  current game's rules and turn/phase state before applying any effect.
 - **FR-002**: System MUST reject any action that violates game rules or is
   submitted out of turn, leaving the game state completely unchanged for all
   players.
@@ -166,19 +197,27 @@ without needing to rejoin or restart.
 - **FR-010**: System MUST notify every connected player when the game reaches
   an end condition (e.g. a winner is determined), so no participant is left
   believing the game is still in progress after it has concluded.
+- **FR-011**: System MUST notify a player individually, and promptly, the
+  moment they are personally defeated (lose their last territory), independent
+  of and prior to any whole-game end notification — a defeated player must not
+  be left unaware of their own elimination merely because the overall game
+  continues for other players.
 
 ### Key Entities
 
-- **Game Action**: A player's submitted intent to deploy, attack, fortify, trade
-  cards, or end their phase — identified by who submitted it, what type it is,
-  and the parameters needed to evaluate it (e.g. source/target territory, troop
-  count, cards selected).
+- **Game Action**: A player's submitted intent to deploy, attack, fortify,
+  trade cards, place their capital, resign, or end their phase — identified by
+  who submitted it, what type it is, and the parameters needed to evaluate it
+  (e.g. source/target territory, troop count, cards selected).
 - **Action Outcome**: The result of a validated Game Action (e.g. dice rolled,
   troops moved, territory captured, cards drawn) shared as a single, consistent
   event with every player connected to that game.
 - **Player Game View**: A personalized snapshot of the canonical game state as
   seen from one seat, filtered according to that seat's current visibility
   rules (fog of war), delivered after every action and upon reconnection.
+- **Player Elimination Notice**: A personal signal delivered only to a player
+  the moment they are individually defeated, distinct from and delivered prior
+  to any whole-game end notification sent to all remaining participants.
 
 ## Success Criteria *(mandatory)*
 
@@ -188,7 +227,7 @@ without needing to rejoin or restart.
   player's game view within 1 second under normal network conditions.
 - **SC-002**: 100% of illegal or out-of-turn action attempts are rejected
   without altering game state for any player, across all action types (deploy,
-  attack, fortify, trade cards, end phase).
+  attack, fortify, trade cards, place capital, resign, end phase).
 - **SC-003**: A reconnecting player regains a fully correct, personalized view
   of the current game within 2 seconds of reconnecting, with no manual steps
   beyond reconnecting.
@@ -198,6 +237,9 @@ without needing to rejoin or restart.
 - **SC-005**: A game can be played from start to a completed end condition
   using only automated (bot) seats, with zero seat-type-specific behavior
   required anywhere in the action-handling path.
+- **SC-006**: 100% of individually defeated players receive their personal
+  elimination notice at the moment they lose their last territory, regardless
+  of whether the overall game continues afterward for other players.
 
 ## Assumptions
 
@@ -216,3 +258,13 @@ without needing to rejoin or restart.
   layer built for the lobby system; this feature is scoped to the actions and
   outcomes carried over that connection, not the connection mechanics
   themselves.
+- The capital-placement and resign action types (added to FR-001 and the Game
+  Action entity) are carried by this protocol but their actual game rules
+  (when placement happens, what resigning does to board state, etc.) are
+  owned by the separate Capital Mode (012) and Win Conditions & Elimination
+  (013) features; this feature is only responsible for validating and
+  delivering them like any other action, not defining their rules.
+- The personal elimination notice (FR-011, User Story 5) is triggered by the
+  defeat/elimination logic owned by feature 013; this feature is only
+  responsible for ensuring that signal is delivered to the affected player
+  individually and promptly, not for detecting defeat itself.

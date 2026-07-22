@@ -40,3 +40,11 @@
   document technology-agnostic; those concrete wire-format details belong in
   the `/speckit-plan` phase, not here.
 - All checklist items pass on first pass.
+- Updated 2026-07-23: closed a drift gap found via manual cross-spec review
+  (prompted by an aborted `/speckit-analyze` run — this feature has no
+  plan.md/tasks.md yet, so that command itself couldn't run). FR-001's action
+  list and the Game Action entity were missing capital placement (012) and
+  resign (013), added along with SC-002. Added FR-011, User Story 5, and
+  SC-006 for the personal elimination notice required by 013's "defeated
+  player sees their own game-over screen" story, which this spec previously
+  had no corresponding signal for.

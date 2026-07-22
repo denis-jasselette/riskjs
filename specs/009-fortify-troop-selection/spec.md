@@ -8,6 +8,19 @@
 
 **Input**: User description: "Fortify troop-count selection for RiskJS — let a player choose how many troops to move during their fortify phase, instead of the current hardcoded move-of-exactly-1. At most one move per turn (or none), at least one troop must remain in the source territory, manual end-phase or auto-end right after a move. Multi-hop pathing through owned territory is unchanged."
 
+## Clarifications
+
+### Session 2026-07-23
+
+- Q: Before confirming a fortify move, can the player change their
+  source/destination/troop-count selection without it counting as their one
+  move for the turn? → A: Yes. Clicking an already-selected source or
+  destination territory again deselects it; the troop-count amount can be
+  changed freely before confirming. Confirming executes the move and
+  immediately ends the phase, after which nothing can be changed. At any
+  point before confirming, the player can instead manually end the phase,
+  abandoning any partial selection with no troops moved.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Move a chosen number of troops during fortify (Priority: P1)
@@ -93,10 +106,11 @@ passes to the next player immediately, without needing to press a separate
 - What happens if a player selects a source territory with exactly 2 troops —
   is the only available move-amount choice "1", since moving 2 would leave
   zero behind?
-- What happens if a player selects a source and destination, chooses a troop
-  count, but then changes their mind before confirming — can they deselect
-  and choose a different source/destination or amount without it counting as
-  their one move for the turn?
+- A player who selects a source and/or destination, or chooses a troop
+  count, can change their mind before confirming: re-clicking a selected
+  source or destination territory deselects it, and the troop count can be
+  re-chosen freely. None of this counts as their one move for the turn —
+  only confirming does.
 - How does the troop-count selection behave for a very large troop count
   (e.g. a territory with dozens of troops after a long game) — is there any
   practical upper bound on how the amount is chosen beyond "N−1"?
@@ -113,7 +127,9 @@ passes to the next player immediately, without needing to press a separate
   source territory with zero troops.
 - **FR-004**: System MUST allow at most one fortify move per turn.
 - **FR-005**: System MUST allow a player to end their fortify phase without
-  making any move at all.
+  making any move at all, including after partially selecting a source,
+  destination, or troop count — abandoning that partial selection with no
+  troops moved.
 - **FR-006**: System MUST automatically end the fortify phase (and the
   player's turn) immediately once a fortify move is completed, without
   requiring a separate manual end-phase action.
@@ -121,6 +137,13 @@ passes to the next player immediately, without needing to press a separate
   the player's own territories connected by an unbroken chain of territories
   they own, not only directly-adjacent territories (unchanged from current
   behavior).
+- **FR-008**: System MUST let a player freely change or clear their source,
+  destination, and troop-count selections at any point before confirming a
+  fortify move — re-clicking an already-selected source or destination
+  territory deselects it — with none of this counting toward the turn's one
+  move.
+- **FR-009**: Once a player confirms a fortify move, System MUST NOT allow
+  any further change to that move.
 
 ### Key Entities
 
