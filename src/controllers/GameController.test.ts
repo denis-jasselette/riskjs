@@ -178,9 +178,29 @@ describe('GameController', () => {
 
   // --------------------------------------------------------
   describe('hasPlayerLost()', () => {
-    it('returns false when the player owns territories (current stub behavior)', () => {
-      // hasPlayerLost is currently a stub that always returns false
+    it('returns false when the player owns at least one territory', () => {
       expect(controller.hasPlayerLost('red')).toBe(false)
+      expect(controller.hasPlayerLost('blue')).toBe(false)
+    })
+
+    it('returns true when the player owns zero territories', () => {
+      // Attacker (red) wipes out defender (blue) entirely by capturing all of blue's territories.
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [], defenderDice: [] })
+      controller.attack(3, 'B', 'C')
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 2, attackerDice: [], defenderDice: [] })
+      controller.attack(2, 'C', 'D')
+
+      expect(controller.getPlayerTerritoryTotal('blue')).toBe(0)
+      expect(controller.hasPlayerLost('blue')).toBe(true)
+      expect(controller.hasPlayerLost('red')).toBe(false)
+    })
+
+    it('returns false for a player who still owns exactly one territory', () => {
+      // player2 loses C but keeps D
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [], defenderDice: [] })
+      controller.attack(3, 'B', 'C')
+
+      expect(controller.getPlayerTerritoryTotal('blue')).toBe(1)
       expect(controller.hasPlayerLost('blue')).toBe(false)
     })
   })

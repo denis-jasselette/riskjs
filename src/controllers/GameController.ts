@@ -282,9 +282,8 @@ export default class GameController {
     return this
   }
 
-  hasPlayerLost(_player: string) {
-    /* TODO */
-    return false
+  hasPlayerLost(player: string): boolean {
+    return this.getPlayerTerritoryTotal(player) === 0
   }
 
   cycleTerritory(territory: string) {
