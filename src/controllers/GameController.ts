@@ -325,11 +325,12 @@ export default class GameController {
   // into the current player's hand), returns them to the deck at a random position
   // (so they remain in circulation), and adds the resulting bonus troops to the
   // player's troopsToDeploy pool. No-op (with a console warning) if the selection
-  // is invalid. In Fixed mode, if the player currently occupies the territory shown
-  // on one or more of the traded (non-wildcard) cards, `bonusTerritory` selects
-  // which single occupied territory receives the +2 territory bonus — required
-  // when more than one traded territory is occupied, since the bonus applies to
-  // only one regardless of how many qualify; ignored/unused otherwise.
+  // is invalid. If the player currently occupies the territory shown on one or
+  // more of the traded (non-wildcard) cards, regardless of bonus mode,
+  // `bonusTerritory` selects which single occupied territory receives the +2
+  // territory bonus — required when more than one traded territory is occupied,
+  // since the bonus applies to only one regardless of how many qualify;
+  // ignored/unused otherwise.
   tradeCards(cardIndices: number[], bonusTerritory?: string): GameController {
     const player = this.gameState.currentPlayer
     const hand = this.gameState.playerCards[player] ?? []
@@ -360,15 +361,13 @@ export default class GameController {
     this.gameState.troopsToDeploy += bonus
     console.info(`${player} traded in a ${setKind} set for trade #${this.gameState.tradeCount}: +${bonus} troops`)
 
-    if (this.gameState.cardBonusMode === 'fixed') {
-      const occupiedTerritories = cards
-        .filter((card): card is Card & { territory: string } => !!card.territory && this.mapController.getTerritoryOwner(card.territory) === player)
-        .map(card => card.territory)
-      const territory = (bonusTerritory && occupiedTerritories.includes(bonusTerritory)) ? bonusTerritory : occupiedTerritories[0]
-      if (territory) {
-        this.mapController.getTroopState(territory)!.count += 2
-        console.info(`${player} occupies ${territory} — +2 territory bonus applied`)
-      }
+    const occupiedTerritories = cards
+      .filter((card): card is Card & { territory: string } => !!card.territory && this.mapController.getTerritoryOwner(card.territory) === player)
+      .map(card => card.territory)
+    const bonusTerritoryToApply = (bonusTerritory && occupiedTerritories.includes(bonusTerritory)) ? bonusTerritory : occupiedTerritories[0]
+    if (bonusTerritoryToApply) {
+      this.mapController.getTroopState(bonusTerritoryToApply)!.count += 2
+      console.info(`${player} occupies ${bonusTerritoryToApply} — +2 territory bonus applied`)
     }
 
     const randomPosition = randInt(0, this.gameState.deck.length)

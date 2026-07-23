@@ -644,13 +644,19 @@ describe('GameController', () => {
   })
 
   // --------------------------------------------------------
-  describe('tradeCards() occupied-territory bonus (Fixed mode)', () => {
-    beforeEach(() => {
-      controller.gameState.cardBonusMode = 'fixed'
-    })
-
+  describe('tradeCards() occupied-territory bonus (applies in both bonus modes)', () => {
     it('applies +2 to the one occupied territory among the traded cards', () => {
       // Red owns A and B in this fixture; A's card is occupied, X and Y are not real territories.
+      controller.gameState.playerCards.red = [card('infantry', 'A'), card('cavalry', 'X'), card('artillery', 'Y')]
+      const before = controller.getTroopCount('A')
+
+      controller.tradeCards([0, 1, 2])
+
+      expect(controller.getTroopCount('A')).toBe(before + 2)
+    })
+
+    it.each(['fixed', 'progressive'] as const)('applies the bonus in %s mode', (mode) => {
+      controller.gameState.cardBonusMode = mode
       controller.gameState.playerCards.red = [card('infantry', 'A'), card('cavalry', 'X'), card('artillery', 'Y')]
       const before = controller.getTroopCount('A')
 
@@ -689,16 +695,6 @@ describe('GameController', () => {
 
       expect(controller.getTroopCount('A')).toBe(beforeA)
       expect(controller.getTroopCount('B')).toBe(beforeB)
-    })
-
-    it('never applies the bonus in progressive mode, even for an occupied territory', () => {
-      controller.gameState.cardBonusMode = 'progressive'
-      controller.gameState.playerCards.red = [card('infantry', 'A'), card('cavalry', 'X'), card('artillery', 'Y')]
-      const before = controller.getTroopCount('A')
-
-      controller.tradeCards([0, 1, 2])
-
-      expect(controller.getTroopCount('A')).toBe(before)
     })
 
     it('is not applied based on a wildcard (which has no territory)', () => {

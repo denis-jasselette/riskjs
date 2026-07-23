@@ -14,9 +14,10 @@ const CARD_LABELS: Record<CardType, string> = {
 }
 
 // Hand + trade-in UI: lets the current player see their held cards (with the
-// territory each depicts and whether it's currently eligible for the Fixed-mode
-// +2 occupied-territory bonus) and, once a valid 3-card set is selected, trade
-// them in for bonus deploy troops. Only ever shown during the current user's own
+// territory each depicts and whether it's currently eligible for the +2
+// occupied-territory bonus, which applies in both bonus modes) and, once a
+// valid 3-card set is selected, trade them in for bonus deploy troops. Only
+// ever shown during the current user's own
 // deploy phase — trading (optional or forced) only ever happens there. Folds down
 // to a compact badge by default (a card-count icon, with a marker for trade-in
 // availability) so it doesn't compete for space with the phase/troop-selector
@@ -44,10 +45,10 @@ const CardHand = () => {
 
   const isOccupied = (card: Card) => !!card.territory && gameController.mapController.getTerritoryOwner(card.territory) === gameState.currentPlayer
 
-  // Fixed mode only: which of the 3 selected territories currently qualify for
-  // the +2 bonus. The bonus applies to exactly one of them, so with more than
-  // one eligible the player picks; with exactly one it's used automatically.
-  const eligibleBonusTerritories = gameState.cardBonusMode === 'fixed' && canTrade
+  // Which of the 3 selected territories currently qualify for the +2 bonus
+  // (either bonus mode). The bonus applies to exactly one of them, so with
+  // more than one eligible the player picks; with exactly one it's automatic.
+  const eligibleBonusTerritories = canTrade
     ? Array.from(new Set(selectedCards.filter(isOccupied).map(card => card.territory!)))
     : []
   const needsBonusChoice = eligibleBonusTerritories.length > 1
@@ -114,7 +115,7 @@ const CardHand = () => {
       </div>
       <div className={style.Cards}>
         {hand.map((card, index) => {
-          const occupied = gameState.cardBonusMode === 'fixed' && isOccupied(card)
+          const occupied = isOccupied(card)
           return (
             <button
               key={index}

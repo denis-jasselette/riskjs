@@ -49,3 +49,10 @@
   than system-decided when more than one traded territory qualifies
   (FR-013 corrected; User Story 6 amended). Checklist re-verified: still all
   passing against the amended spec.
+- 2026-07-24: corrected a real bug found in play — the +2 occupied-territory
+  bonus was wrongly restricted to Fixed mode only (a mistake carried over
+  uncritically from the original draft). It's a mode-independent classic
+  Risk rule, layered on top of whichever base trade-in bonus applies.
+  FR-013 now applies in both modes, FR-014 narrowed to just the wildcard
+  exclusion (its Progressive-mode clause removed), User Story 6/SC-006/
+  SC-007 amended to match. Checklist re-verified: still all passing.
