@@ -91,7 +91,7 @@
   &[data-fog=true] {
     fill: #555 !important;
 
-    &[data-selectable=true]:hover {
+    &[data-selectable=true][data-hovered=true] {
       fill: #777 !important;
     }
   }
@@ -100,7 +100,7 @@
     &[data-player="#{$key}"] {
       fill: color.adjust($color, $lightness: 10%);
 
-      &[data-selectable=true]:hover {
+      &[data-selectable=true][data-hovered=true] {
         fill: color.adjust($color, $lightness: 25%);
       }
     }
@@ -118,6 +118,15 @@
       transform: scale(.8, .6) rotate(8deg) translate(100px, 10px);
     }
   }
+}
+
+// A sibling of .TerritoryEdge (not a child) so it never inherits that
+// class's fill/stroke rules — including the !important fog override —
+// which would otherwise render this "invisible" click-catch as a visible box.
+.TerritoryHitbox {
+  fill: transparent;
+  stroke: none;
+  cursor: pointer;
 }
 
 .ContinentEdge {
