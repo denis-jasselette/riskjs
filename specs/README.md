@@ -3,8 +3,9 @@
 This directory holds every speckit feature specification for RiskJS, across
 three axes of work:
 
-- **Rules Engine** (008–014) — the core game rules, playable locally today
-  and shared by every mode of play (local pass-and-play, online, bots).
+- **Rules Engine** (008–014, 024) — the core game rules, playable locally
+  today and shared by every mode of play (local pass-and-play, online,
+  bots).
 - **Online Multiplayer** (001–007) — the room/lobby/protocol/hosting layer
   that turns the existing local game into a public online product.
 - **Polish & Admin Tooling** (015–023) — player-facing quality-of-life
@@ -15,11 +16,13 @@ The axes are mostly independent and can progress in parallel, with a small
 number of explicit cross-axis dependencies noted below (features 001 and 002
 need parts of the Rules Engine axis to reach full completion, even though
 their baseline can be built without it; several Phase 6 features depend on
-specific earlier features from either axis).
+specific earlier features from either axis; 024 flags a likely follow-up
+drift-fix to 001, not yet made).
 
-All 23 specs currently have `spec.md` + `checklists/requirements.md` only —
-none have gone through `/speckit-plan` or `/speckit-tasks` yet. Status below
-reflects that.
+All 24 specs currently have `spec.md` + `checklists/requirements.md` only —
+none have gone through `/speckit-plan` or `/speckit-tasks` yet, except 008,
+009, 010, and 011, which additionally have `plan.md`/`research.md`/
+`data-model.md`/`quickstart.md`. Status below reflects that.
 
 ## Phased Roadmap
 
@@ -40,6 +43,13 @@ order or in parallel.
 - **[011 — Fog of War Owner Visibility](011-fog-of-war-owner-visibility/spec.md)**
   Hide territory owner as well as troop count outside a player's visible
   range.
+- **[024 — Post-Conquest Troop Movement](024-post-conquest-troop-movement/spec.md)**
+  *(no dependencies)*
+  Let the attacker choose how many troops move into a newly conquered
+  territory (bounded between the winning roll's dice count and leaving 1
+  behind, defaulting to max), instead of the engine automatically moving
+  everyone over. Found later than 008-011 but belongs in this same
+  foundational group.
 
 ### Phase 2 — Rules Engine: Capital, Endgame & Cards
 
@@ -182,6 +192,7 @@ members, except 016 (depends on 015).
 - **021** — Admin User Management — Polish & Admin Tooling — Draft (spec only)
 - **022** — Admin Lobby Management — Polish & Admin Tooling — Draft (spec only)
 - **023** — Admin Game Management — Polish & Admin Tooling — Draft (spec only)
+- **024** — Post-Conquest Troop Movement — Rules Engine — Draft (spec only)
 
 ## Not Yet Specced
 
