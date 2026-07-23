@@ -15,6 +15,8 @@ import GameState from '@/models/GameState'
 const Game = () => {
   const [selectedTerritory, setSelectedTerritory] = useState<string | undefined>(undefined)
   const [attackDiceCount, setAttackDiceCount] = useState<number>(1)
+  const [fortifyDestination, setFortifyDestination] = useState<string | undefined>(undefined)
+  const [fortifyTroopCount, setFortifyTroopCount] = useState<number>(1)
   const [attackResult, setAttackResult] = useState<DiceResultData | null>(null)
   const [isZoomed, setIsZoomed] = useState(false)
   const [turnChangeNotice, setTurnChangeNotice] = useState<TurnChangeBannerData | null>(null)
@@ -55,17 +57,44 @@ const Game = () => {
     ? Math.min(gameController.getTroopCount(selectedTerritory) - 1, 3)
     : 0
 
+  const maxFortifyTroops = selectedTerritory && gameState.currentPhase === 'fortify'
+    ? gameController.getTroopCount(selectedTerritory) - 1
+    : 0
+
+  const resetFortifySelection = () => {
+    setFortifyDestination(undefined)
+    setFortifyTroopCount(1)
+  }
+
   const handleEndPhase = () => {
     setEliminationNotice(null)
+    setSelectedTerritory(undefined)
+    resetFortifySelection()
     setGameState(gameController.startNextPhase().gameState)
   }
 
   const handleClickOutside = () => {
     setSelectedTerritory(undefined)
+    resetFortifySelection()
   }
 
   const handleAttackDiceChange = (count: number) => {
     setAttackDiceCount(count)
+  }
+
+  const handleFortifyTroopCountChange = (count: number) => {
+    const clamped = Math.min(Math.max(count, 1), Math.max(maxFortifyTroops, 1))
+    setFortifyTroopCount(clamped)
+  }
+
+  const handleFortifyConfirm = () => {
+    if (!selectedTerritory || !fortifyDestination)
+      return
+
+    setEliminationNotice(null)
+    setGameState(gameController.fortify(fortifyTroopCount, selectedTerritory, fortifyDestination).gameState)
+    setSelectedTerritory(undefined)
+    resetFortifySelection()
   }
 
   const handleClickTerritory = (territory: string) => {
@@ -79,10 +108,12 @@ const Game = () => {
     }
     if (selectedTerritory === territory) {
       setSelectedTerritory(undefined)
+      resetFortifySelection()
       return
     }
     if (!selectedTerritory) {
       setSelectedTerritory(territory)
+      resetFortifySelection()
       const newMax = Math.min(gameController.getTroopCount(territory) - 1, 3)
       setAttackDiceCount(Math.min(attackDiceCount, Math.max(newMax, 1)))
       return
@@ -106,9 +137,12 @@ const Game = () => {
       return
     }
     if (gameState.currentPhase === 'fortify') {
-      setEliminationNotice(null)
-      setGameState(gameController.fortify(1, selectedTerritory, territory).gameState)
-      setSelectedTerritory(undefined)
+      if (territory === fortifyDestination) {
+        resetFortifySelection()
+        return
+      }
+      setFortifyDestination(territory)
+      setFortifyTroopCount(1)
       return
     }
   }
@@ -122,6 +156,11 @@ const Game = () => {
         attackDiceCount={attackDiceCount}
         maxAttackDice={maxAttackDice}
         onAttackDiceChange={handleAttackDiceChange}
+        fortifyDestination={fortifyDestination}
+        fortifyTroopCount={fortifyTroopCount}
+        maxFortifyTroops={maxFortifyTroops}
+        onFortifyTroopCountChange={handleFortifyTroopCountChange}
+        onFortifyConfirm={handleFortifyConfirm}
       />
       <Map
         class={isZoomed ? style.GameMapFullscreen : style.GameMapSafeArea}

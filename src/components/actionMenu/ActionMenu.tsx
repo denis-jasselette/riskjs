@@ -11,6 +11,11 @@ export interface ActionMenuProps {
   attackDiceCount?: number
   maxAttackDice?: number
   onAttackDiceChange?: (count: number) => void
+  fortifyDestination?: string
+  fortifyTroopCount?: number
+  maxFortifyTroops?: number
+  onFortifyTroopCountChange?: (count: number) => void
+  onFortifyConfirm?: () => void
 }
 
 const ActionMenu = (props: ActionMenuProps) => {
@@ -24,6 +29,16 @@ const ActionMenu = (props: ActionMenuProps) => {
     && props.maxAttackDice > 0
     && props.attackDiceCount !== undefined
     && props.onAttackDiceChange !== undefined
+
+  const showFortifySelector = gameState.currentPhase === 'fortify'
+    && props.fortifyDestination !== undefined
+    && props.maxFortifyTroops !== undefined
+    && props.maxFortifyTroops > 0
+    && props.fortifyTroopCount !== undefined
+    && props.onFortifyTroopCountChange !== undefined
+    && props.onFortifyConfirm !== undefined
+
+  const stopPropagation = <T extends { stopPropagation: () => void }>(e: T) => e.stopPropagation()
 
   return (
     <div className={style.ActionMenuContainer}>
@@ -66,6 +81,46 @@ const ActionMenu = (props: ActionMenuProps) => {
           <PhaseEndButton currentPhase={gameState.currentPhase} handleClick={props.handleEndPhase} />
         </div>
       </div>
+
+      {showFortifySelector && (
+        <div className={style.FortifySelectorRow} onClick={stopPropagation}>
+          <span className={style.FortifySelectorLabel}>Troops to move:</span>
+          <div className={style.FortifyStepper}>
+            <button
+              type="button"
+              className={style.FortifyStepBtn}
+              disabled={props.fortifyTroopCount! <= 1}
+              onClick={() => props.onFortifyTroopCountChange!(props.fortifyTroopCount! - 1)}
+            >
+              −
+            </button>
+            <input
+              type="range"
+              className={style.FortifySlider}
+              min={1}
+              max={props.maxFortifyTroops}
+              value={props.fortifyTroopCount}
+              onChange={e => props.onFortifyTroopCountChange!(Number(e.target.value))}
+            />
+            <span className={style.FortifyCount}>{props.fortifyTroopCount}</span>
+            <button
+              type="button"
+              className={style.FortifyStepBtn}
+              disabled={props.fortifyTroopCount! >= props.maxFortifyTroops!}
+              onClick={() => props.onFortifyTroopCountChange!(props.fortifyTroopCount! + 1)}
+            >
+              +
+            </button>
+          </div>
+          <button
+            type="button"
+            className={style.FortifyConfirmBtn}
+            onClick={() => props.onFortifyConfirm!()}
+          >
+            Confirm
+          </button>
+        </div>
+      )}
     </div>
   )
 }

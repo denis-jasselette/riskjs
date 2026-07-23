@@ -40,7 +40,7 @@ Structure Decision.
 **Purpose**: Confirm a clean starting point before touching the fortify
 interaction
 
-- [ ] T001 Run `pnpm run lint && pnpm run test && pnpm run build` from the
+- [x] T001 Run `pnpm run lint && pnpm run test && pnpm run build` from the
   repo root and confirm all three pass with no pre-existing failures in
   `src/components/Game.tsx` / `src/components/actionMenu/ActionMenu.tsx`,
   per the constitution's CI-gate principle.
@@ -56,11 +56,11 @@ prerequisite for all three user stories below.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 In `src/components/Game.tsx`, add two new state hooks inside the
+- [x] T002 In `src/components/Game.tsx`, add two new state hooks inside the
   `Game` component: `const [fortifyDestination, setFortifyDestination] =
   useState<string | undefined>(undefined)` and `const [fortifyTroopCount,
   setFortifyTroopCount] = useState<number>(1)`.
-- [ ] T003 In `src/components/Game.tsx`, rewrite the `fortify` branch of
+- [x] T003 In `src/components/Game.tsx`, rewrite the `fortify` branch of
   `handleClickTerritory` (currently `gameController.fortify(1,
   selectedTerritory, territory)`, fired immediately on the second click) so
   that: clicking a valid destination while `fortifyDestination` is unset
@@ -90,7 +90,7 @@ amount.
 
 ### Implementation for User Story 1
 
-- [ ] T004 [P] [US1] In `src/components/actionMenu/ActionMenu.tsx`, add new
+- [x] T004 [P] [US1] In `src/components/actionMenu/ActionMenu.tsx`, add new
   optional props (`fortifyTroopCount?: number`, `maxFortifyTroops?:
   number`, `onFortifyTroopCountChange?: (count: number) => void`,
   `onConfirmFortify?: () => void`) and render a troop-count control (a
@@ -99,11 +99,11 @@ amount.
   can exceed 3) plus a "Confirm" button, shown only when
   `gameState.currentPhase === 'fortify'` and all four fortify props are
   defined and `maxFortifyTroops > 0`.
-- [ ] T005 [P] [US1] In `src/components/actionMenu/ActionMenu.module.scss`,
+- [x] T005 [P] [US1] In `src/components/actionMenu/ActionMenu.module.scss`,
   add styles for the new fortify troop-count control and Confirm button,
   consistent with the existing `.DiceSelector`/`.DiceSelectorBtn` styling
   conventions.
-- [ ] T006 [US1] In `src/components/Game.tsx`, compute `maxFortifyTroops`
+- [x] T006 [US1] In `src/components/Game.tsx`, compute `maxFortifyTroops`
   as `gameController.getTroopCount(selectedTerritory) - 1` whenever
   `selectedTerritory` and `fortifyDestination` are both set (else `0`),
   pass it plus `fortifyTroopCount`/`onFortifyTroopCountChange` down to
@@ -112,7 +112,7 @@ amount.
   fortifyDestination).gameState)`, then clear `selectedTerritory` and
   `fortifyDestination` and reset `fortifyTroopCount` to `1`. Depends on
   T004.
-- [ ] T007 [US1] Manual validation: follow
+- [x] T007 [US1] Manual validation: follow
   `specs/009-fortify-troop-selection/quickstart.md` steps 1, 3, 4, and 5 in
   the browser (`pnpm run dev`) — a multi-troop move transfers the exact
   chosen amount (SC-001, SC-002); re-clicking a selected source or
@@ -138,11 +138,11 @@ anywhere on the board.
 
 ### Implementation for User Story 2
 
-- [ ] T008 [US2] In `src/components/Game.tsx`, ensure `handleEndPhase` also
+- [x] T008 [US2] In `src/components/Game.tsx`, ensure `handleEndPhase` also
   resets `fortifyDestination` (to `undefined`) and `fortifyTroopCount`
   (to `1`) in addition to its existing `startNextPhase()` call, so no
   stale fortify-selection state leaks into a later fortify phase (FR-005).
-- [ ] T009 [US2] Manual validation: follow
+- [x] T009 [US2] Manual validation: follow
   `specs/009-fortify-troop-selection/quickstart.md` step 2 — enter the
   fortify phase, make no selections, click "End turn"; confirm no troop
   counts changed anywhere and the turn advances (SC-004, User Story 2
@@ -164,7 +164,7 @@ passes to the next player immediately, without needing to press a separate
 
 ### Implementation for User Story 3
 
-- [ ] T010 [US3] Manual validation: follow
+- [x] T010 [US3] Manual validation: follow
   `specs/009-fortify-troop-selection/quickstart.md` step 6 — after
   Confirm, verify the turn passes to the next player immediately with no
   separate manual step, and that no further fortify move is possible that
@@ -179,16 +179,16 @@ passes to the next player immediately, without needing to press a separate
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T011 Manual validation: follow
+- [x] T011 Manual validation: follow
   `specs/009-fortify-troop-selection/quickstart.md` step 7 — resize to the
   ≤640px mobile breakpoint and repeat the golden-path fortify move from
   User Story 1; confirm the new control is usable and nothing
   overlaps/hides other UI, per constitution Principle IV.
-- [ ] T012 Manual validation: follow
+- [x] T012 Manual validation: follow
   `specs/009-fortify-troop-selection/quickstart.md` step 8 — confirm the
   attack-phase dice selector still works unaffected and the deploy phase is
   untouched (regression check).
-- [ ] T013 Run `pnpm run lint && pnpm run test && pnpm run build` from the
+- [x] T013 Run `pnpm run lint && pnpm run test && pnpm run build` from the
   repo root and fix any failures, per the constitution's CI-gate principle.
 
 ---
