@@ -1,10 +1,11 @@
 import GameController from '@/controllers/GameController'
-import { distribute, shuffle } from '@/lib/Random'
+import { distribute, shuffle, shuffled } from '@/lib/Random'
 import { CardBonusMode } from '@/models/CardBonusMode'
 import { CardType } from '@/models/CardType'
 import GameState from '@/models/GameState'
 import MapConfig from '@/models/MapConfig'
 import PlayerConfig from '@/models/PlayerConfig'
+import TerritoryConfig from '@/models/TerritoryConfig'
 import TroopState from '@/models/TroopState'
 
 const initTroopsTable: Record<number, number> = {
@@ -29,7 +30,18 @@ export default class GameLogic {
       if (blizzardsEnabled) {
         remainingCardCount -= mapConfig.blizzards
         topDeckIndex += mapConfig.blizzards
-        return deck.slice(0, mapConfig.blizzards)
+
+        const frozen = this.selectConnectivitySafeBlizzards(mapConfig)
+
+        // Reorder deck in place so the chosen frozen territories occupy
+        // indices [0, mapConfig.blizzards), preserving the relative order of
+        // the rest so the topDeckIndex/remainingCardCount dealing below keeps
+        // working unmodified.
+        const frozenSet = new Set(frozen)
+        const rest = deck.filter(territory => !frozenSet.has(territory))
+        deck.splice(0, deck.length, ...frozen, ...rest)
+
+        return frozen
       }
       else {
         return []
@@ -54,6 +66,74 @@ export default class GameLogic {
     }
 
     return [troops, blizzards]
+  }
+
+  // Randomly selects mapConfig.blizzards territories to freeze such that the
+  // remaining (non-frozen) territories always stay fully connected.
+  //
+  // Repeatedly sweeps the not-yet-frozen territories in a freshly shuffled
+  // order; within a sweep, greedily freezes a candidate only if the graph
+  // formed by the territories NOT yet frozen (including this candidate)
+  // still has a single connected component, otherwise skips it. A single
+  // sweep alone is not enough: whether freezing a given territory is safe
+  // depends on what else is already frozen (e.g. on a path graph, freezing
+  // an interior node is only safe once its neighbor toward one end is
+  // already frozen), so a candidate skipped early in one sweep may become
+  // safe later once other freezes have happened. Sweeping repeatedly until
+  // a full sweep makes no further progress lets those candidates be
+  // reconsidered instead of being permanently discarded.
+  //
+  // Runs before any GameState exists, so it operates directly on mapConfig
+  // rather than via MapController.
+  private static selectConnectivitySafeBlizzards(mapConfig: MapConfig): string[] {
+    const allTerritories = Object.keys(mapConfig.territories)
+    const frozen = new Set<string>()
+
+    let progressed = true
+    while (frozen.size < mapConfig.blizzards && progressed) {
+      progressed = false
+
+      const candidates = shuffled(allTerritories.filter(territory => !frozen.has(territory)))
+      for (const territory of candidates) {
+        if (frozen.size >= mapConfig.blizzards)
+          break
+
+        frozen.add(territory)
+        if (this.isConnectedExcluding(mapConfig.territories, frozen))
+          progressed = true
+        else
+          frozen.delete(territory)
+      }
+    }
+
+    return Array.from(frozen)
+  }
+
+  // Plain BFS reachability check: are all territories NOT in `excluded`
+  // reachable from one another via a path through only non-excluded
+  // territories? 0 or 1 remaining territories are vacuously connected.
+  private static isConnectedExcluding(territories: Record<string, TerritoryConfig>, excluded: Set<string>): boolean {
+    const remaining = Object.keys(territories).filter(territory => !excluded.has(territory))
+    if (remaining.length <= 1)
+      return true
+
+    const visited = new Set<string>([remaining[0]])
+    const queue: string[] = [remaining[0]]
+
+    while (queue.length > 0) {
+      const current = queue.shift() as string
+      const adjacency = territories[current]?.adjacency ?? []
+
+      for (const neighbor of adjacency) {
+        if (excluded.has(neighbor) || visited.has(neighbor))
+          continue
+
+        visited.add(neighbor)
+        queue.push(neighbor)
+      }
+    }
+
+    return visited.size === remaining.length
   }
 
   // The classic Risk card deck: one card per territory (per mapConfig.cards.territories)

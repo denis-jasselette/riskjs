@@ -38,7 +38,7 @@ class) — no model changes, per plan.md's Structure Decision.
 **Purpose**: Confirm a clean starting point before touching blizzard setup
 logic
 
-- [ ] T001 Run `pnpm run lint && pnpm run test && pnpm run build` from the
+- [x] T001 Run `pnpm run lint && pnpm run test && pnpm run build` from the
   repo root and confirm all three pass with no pre-existing failures in
   `src/controllers/GameLogic.ts`, per the constitution's CI-gate principle.
 
@@ -51,7 +51,7 @@ blizzard-selection algorithm depends on.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 In `src/controllers/GameLogic.ts`, add a new private static
+- [x] T002 In `src/controllers/GameLogic.ts`, add a new private static
   method `isConnectedExcluding(territories: Record<string, TerritoryConfig>,
   excluded: Set<string>): boolean` that performs a BFS/DFS over `adjacency`
   edges among all territory names in `territories` not present in
@@ -77,7 +77,7 @@ other non-frozen territory through a path of non-frozen territories.
 
 ### Tests for User Story 1
 
-- [ ] T003 [US1] Create `src/controllers/GameLogic.test.ts` (new file) with
+- [x] T003 [US1] Create `src/controllers/GameLogic.test.ts` (new file) with
   test cases: run `GameLogic.autoSetupTroops` (or the blizzard-selection
   logic directly, if factored out in T004) 100+ times against the classic
   map's `MapConfig` with `blizzardsEnabled = true`, and for each run assert
@@ -91,7 +91,7 @@ other non-frozen territory through a path of non-frozen territories.
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] In `src/controllers/GameLogic.ts`, replace the
+- [x] T004 [US1] In `src/controllers/GameLogic.ts`, replace the
   `blizzardsEnabled` branch's body inside `autoSetupTroops` with a
   connectivity-safe selection: shuffle `Object.keys(mapConfig.territories)`
   (via the existing `shuffled()` from `lib/Random.ts`) as the candidate
@@ -116,13 +116,16 @@ and all other blizzard behavior unchanged.
 
 ## Phase 4: Polish & Cross-Cutting Concerns
 
-- [ ] T005 Manual validation: follow
+- [ ] T005 Manual validation (skipped — no dev-server/browser tool was
+  available in the implementing agent's environment; the automated
+  statistical tests in T003 are the primary evidence for this feature's
+  correctness). Follow
   `specs/010-blizzard-connectivity/quickstart.md`'s manual steps —
   `pnpm run dev`, start several games with blizzards enabled on the
   classic map, and visually confirm frozen territories never appear to cut
   the map into isolated regions; start one game with blizzards disabled
   and confirm no territories are marked frozen.
-- [ ] T006 Run `pnpm run lint && pnpm run test && pnpm run build` from the
+- [x] T006 Run `pnpm run lint && pnpm run test && pnpm run build` from the
   repo root and fix any failures, per the constitution's CI-gate principle.
 
 ---
