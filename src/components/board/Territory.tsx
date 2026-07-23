@@ -29,7 +29,7 @@ const Territory = (props: TerritoryProps) => {
     <g
       className={style.TerritoryEdge}
       data-territory={props.territory}
-      data-player={props.troopState && props.troopState.player.color}
+      data-player={!props.isInFog && props.troopState ? props.troopState.player.color : undefined}
       data-blizzard={props.isBlizzard}
       data-selected={props.isSelected}
       data-selectable={props.isSelectable}
@@ -49,6 +49,7 @@ const Territory = (props: TerritoryProps) => {
             y={props.territoryConfig.coords.y - props.troopSize * (60 / 150)}
             width={props.troopSize}
             label={props.isInFog ? '?' : undefined}
+            isInFog={props.isInFog}
           />
         </g>
       )}

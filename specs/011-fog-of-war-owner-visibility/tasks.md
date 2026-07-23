@@ -40,7 +40,7 @@ controller/model changes, per plan.md's Structure Decision.
 **Purpose**: Confirm a clean starting point before touching territory
 rendering
 
-- [ ] T001 Run `pnpm run lint && pnpm run test && pnpm run build` from the
+- [x] T001 Run `pnpm run lint && pnpm run test && pnpm run build` from the
   repo root and confirm all three pass with no pre-existing failures in
   `src/components/board/Territory.tsx`, per the constitution's CI-gate
   principle.
@@ -61,7 +61,7 @@ neither value is present in the rendered markup.
 
 ### Implementation for User Story 1
 
-- [ ] T002 [US1] In `src/components/board/Territory.tsx`, change the
+- [x] T002 [US1] In `src/components/board/Territory.tsx`, change the
   `data-player` attribute on the root `<g>` element from unconditionally
   `props.troopState && props.troopState.player.color` to
   `props.isInFog ? undefined : (props.troopState && props.troopState.player.color)`,
@@ -71,23 +71,34 @@ neither value is present in the rendered markup.
   player-color, distinct-from-neutral visual (FR-006) — no CSS change is
   needed.
 
+  **Addendum (found during T003 manual validation)**: this fix alone was
+  not sufficient. `src/components/board/Troop.tsx` had a legacy
+  imperative `useEffect` that queried the DOM directly
+  (`document.querySelectorAll('.TerritoryEdge[data-territory=...]')`) and
+  unconditionally set `elt.dataset.player = props.player.color` on mount,
+  bypassing React and re-writing the true owner back onto the territory's
+  `data-player` attribute regardless of fog — silently defeating this
+  task's fix. It also set its own `data-player-color` unconditionally.
+  Removed the dead effect (redundant with `Territory.tsx`'s declarative
+  attribute) and made `data-player-color` fog-aware too.
+
 ### Manual Validation for User Story 1
 
-- [ ] T003 [US1] Manual validation: follow
+- [x] T003 [US1] Manual validation: follow
   `specs/011-fog-of-war-owner-visibility/quickstart.md` steps 1–2 in the
   browser (`pnpm run dev`) with devtools open — confirm a fogged territory
   still renders the existing gray fill (unchanged appearance) and confirm
   its `data-player` attribute is now absent, where before this fix it
   would show the true owner's color despite looking masked (SC-001,
   Acceptance Scenario 1 — the actual DOM-leak bug this feature closes).
-- [ ] T004 [US1] Manual validation: follow
+- [x] T004 [US1] Manual validation: follow
   `specs/011-fog-of-war-owner-visibility/quickstart.md` steps 3–4 —
   confirm in-range territories (owned or directly bordering an owned
   territory) still show real owner and troop count exactly as before
   (SC-002, Acceptance Scenario 2), and confirm a game with fog of war
   disabled shows real owner/troop count everywhere with no
   `[data-fog=true]` styling anywhere (SC-003, Acceptance Scenario 3).
-- [ ] T005 [US1] Manual validation: follow
+- [x] T005 [US1] Manual validation: follow
   `specs/011-fog-of-war-owner-visibility/quickstart.md` steps 5–6 —
   confirm the fog gray remains visually distinct from every active
   player's color (FR-006, 2026-07-23 clarification), and confirm a
@@ -102,13 +113,13 @@ testable — owner is genuinely hidden, not just cosmetically masked.
 
 ## Phase 3: Polish & Cross-Cutting Concerns
 
-- [ ] T006 Verification (no code change): follow
+- [x] T006 Verification (no code change): follow
   `specs/011-fog-of-war-owner-visibility/quickstart.md` step 7 — confirm
   `ContinentsComponent`'s continent-border coloring by full-continent owner
   (independent of fog) is understood as pre-existing, out-of-scope
   behavior per `research.md`, so it isn't mistaken for a regression
   introduced by T002.
-- [ ] T007 Run `pnpm run lint && pnpm run test && pnpm run build` from the
+- [x] T007 Run `pnpm run lint && pnpm run test && pnpm run build` from the
   repo root and fix any failures, per the constitution's CI-gate principle.
 
 ---
