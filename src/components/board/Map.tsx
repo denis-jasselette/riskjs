@@ -4,6 +4,7 @@ import { BridgesComponent } from '@/components/board/BridgesComponent'
 import { ContinentsComponent } from '@/components/board/ContinentsComponent'
 import style from '@/components/board/Map.module.scss'
 import Territories from '@/components/board/Territories'
+import { TerritoryTroops } from '@/components/board/TerritoryTroops'
 import GameContext from '@/components/GameContext'
 import { usePanZoom } from '@/hooks/usePanZoom'
 
@@ -101,6 +102,9 @@ const Map = (props: MapProps) => {
           </g>
           <g className={style.Bridges}>
             <BridgesComponent />
+          </g>
+          <g className={style.TerritoryTroops}>
+            <TerritoryTroops />
           </g>
         </g>
       </svg>

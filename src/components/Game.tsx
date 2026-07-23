@@ -157,8 +157,18 @@ const Game = () => {
         resetFortifySelection()
         return
       }
+      if (maxFortifyTroops <= 1) {
+        // Only one possible troop count (source has exactly 2 troops) —
+        // nothing to choose, so move immediately instead of requiring a
+        // separate Confirm.
+        setEliminationNotice(null)
+        setGameState(gameController.fortify(1, selectedTerritory, territory).gameState)
+        setSelectedTerritory(undefined)
+        resetFortifySelection()
+        return
+      }
       setFortifyDestination(territory)
-      setFortifyTroopCount(1)
+      setFortifyTroopCount(maxFortifyTroops)
       return
     }
   }

@@ -1,5 +1,4 @@
 import style from '@/components/board/Map.module.scss'
-import Troop from '@/components/board/Troop'
 import TerritoryConfig from '@/models/TerritoryConfig'
 import TroopState from '@/models/TroopState'
 
@@ -39,20 +38,6 @@ const Territory = (props: TerritoryProps) => {
         d={props.territoryConfig.path}
         onClick={handleClick}
       />
-      {props.troopState && (
-        <g className={style.Troops}>
-          <Troop
-            player={props.troopState.player}
-            count={props.troopState.count}
-            territory={props.territory}
-            x={props.territoryConfig.coords.x - props.troopSize * (80 / 160)}
-            y={props.territoryConfig.coords.y - props.troopSize * (60 / 150)}
-            width={props.troopSize}
-            label={props.isInFog ? '?' : undefined}
-            isInFog={props.isInFog}
-          />
-        </g>
-      )}
       {props.isBlizzard && (
         <svg
           xmlns="http://www.w3.org/2000/svg"
