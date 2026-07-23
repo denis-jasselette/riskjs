@@ -209,7 +209,8 @@
         "NorthernEurope",
         "Scandinavia",
         "WesternEurope"
-      ]
+      ],
+      "expandedHitbox": true
     },
     "Greenland": {
       "coords": {
@@ -263,7 +264,8 @@
         "NewGuinea",
         "Siam",
         "WesternAustralia"
-      ]
+      ],
+      "expandedHitbox": true
     },
     "Irkutsk": {
       "coords": {

@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react'
+
 import style from '@/components/board/Map.module.scss'
 import TerritoryConfig from '@/models/TerritoryConfig'
 import TroopState from '@/models/TroopState'
@@ -16,7 +18,20 @@ export interface TerritoryProps {
 }
 
 const Territory = (props: TerritoryProps) => {
-  const handleClick = (e: React.MouseEvent<SVGPathElement>) => {
+  const pathRef = useRef<SVGPathElement>(null)
+  const [hitboxRect, setHitboxRect] = useState<DOMRect | null>(null)
+
+  // Some territories (island groups) are drawn as several disconnected
+  // landmasses in one path, leaving an unclickable gap between them —
+  // covering the path's own bounding box with an invisible rect closes that
+  // gap. Computed from the real rendered geometry rather than hand-authored,
+  // so it stays correct if the path data ever changes.
+  useEffect(() => {
+    if (props.territoryConfig.expandedHitbox && pathRef.current)
+      setHitboxRect(pathRef.current.getBBox())
+  }, [props.territoryConfig.expandedHitbox, props.territoryConfig.path])
+
+  const handleClick = (e: React.MouseEvent) => {
     if (!props.handleClick)
       return
 
@@ -35,9 +50,20 @@ const Territory = (props: TerritoryProps) => {
       data-fog={props.isInFog}
     >
       <path
+        ref={pathRef}
         d={props.territoryConfig.path}
         onClick={handleClick}
       />
+      {hitboxRect && (
+        <rect
+          x={hitboxRect.x}
+          y={hitboxRect.y}
+          width={hitboxRect.width}
+          height={hitboxRect.height}
+          fill="transparent"
+          onClick={handleClick}
+        />
+      )}
       {props.isBlizzard && (
         <svg
           xmlns="http://www.w3.org/2000/svg"
