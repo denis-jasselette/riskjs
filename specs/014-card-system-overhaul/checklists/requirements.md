@@ -40,3 +40,12 @@
 - Last spec in the core-rules set (008-014); together with 008-013 this
   fully covers the brainstormed ruleset.
 - All checklist items pass on first pass.
+- 2026-07-23: implemented ahead of the stated phase order (out of sequence
+  with unbuilt 012/013), from direct usage feedback, with a narrowly-scoped
+  stand-in for the 013 elimination-transfer trigger (see Assumptions). Spec
+  amended in the same pass to add two things the implementation surfaced as
+  missing: hand cards must display their territory and bonus eligibility
+  (FR-015, not previously stated), and the +2 bonus is player-chosen rather
+  than system-decided when more than one traded territory qualifies
+  (FR-013 corrected; User Story 6 amended). Checklist re-verified: still all
+  passing against the amended spec.

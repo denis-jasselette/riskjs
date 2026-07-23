@@ -1,5 +1,5 @@
+import Card from '@/models/Card'
 import { CardBonusMode } from '@/models/CardBonusMode'
-import { CardType } from '@/models/CardType'
 import { GamePhase } from '@/models/GamePhase'
 import MapConfig from '@/models/MapConfig'
 import PlayerConfig from '@/models/PlayerConfig'
@@ -20,9 +20,9 @@ export default class GameState {
   troopsToDeploy: number
 
   /** Remaining shuffled Risk-card deck, built from mapConfig.cards at game start. */
-  deck: CardType[]
+  deck: Card[]
   /** Cards currently held by each player, keyed by player color. */
-  playerCards: Record<string, CardType[]>
+  playerCards: Record<string, Card[]>
   /** Whether the current player has captured at least one territory this turn (resets each turn). */
   conqueredTerritoryThisTurn: boolean
   /** How many card-set trades have happened this game, across all players. */

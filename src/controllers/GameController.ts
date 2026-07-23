@@ -1,6 +1,6 @@
 import { MapController } from '@/controllers/MapController'
-import { diceRoll } from '@/lib/Random'
-import { CardType } from '@/models/CardType'
+import { diceRoll, randInt } from '@/lib/Random'
+import Card from '@/models/Card'
 import { GamePhase } from '@/models/GamePhase'
 import GameState from '@/models/GameState'
 
@@ -9,11 +9,22 @@ import GameState from '@/models/GameState'
 const PROGRESSIVE_CARD_BONUS_TABLE = [4, 6, 8, 10, 12, 15]
 const PROGRESSIVE_CARD_BONUS_STEP = 5
 
-// The "Fixed" bonus mode has no canonical value in classic Risk rules (variants differ).
-// 4 troops per trade is a reasonable, tunable product default.
-const FIXED_CARD_BONUS = 4
+// A traded 3-card set resolves to one of these kinds (wildcards substitute
+// whichever type(s) make the set valid): three of one non-wildcard type, or
+// "mixed" (one of each of the three non-wildcard types).
+export type CardSetKind = 'infantry' | 'cavalry' | 'artillery' | 'mixed'
 
-const NON_WILDCARD_TYPES: CardType[] = ['infantry', 'cavalry', 'artillery']
+// Classic Risk fixed-mode bonus table, by resolved set kind.
+const FIXED_CARD_BONUS_TABLE: Record<CardSetKind, number> = {
+  infantry: 4,
+  cavalry: 6,
+  artillery: 8,
+  mixed: 10,
+}
+
+// A player holding this many cards or more must trade in a valid set before
+// taking any other action, immediately and repeatedly until below this count.
+const FORCED_TRADE_IN_THRESHOLD = 5
 
 export default class GameController {
   gameState: GameState
@@ -43,7 +54,7 @@ export default class GameController {
     const troopCount = this.getTroopCount(territory)
     const owner = this.mapController.getTerritoryOwner(territory)
     if (this.gameState.currentPhase === 'deploy')
-      return owner === this.gameState.currentPlayer
+      return owner === this.gameState.currentPlayer && !this.hasForcedTradeIn()
     if (this.gameState.currentPhase === 'fortify')
       return owner === this.gameState.currentPlayer && ((!selectedTerritory && troopCount > 1) || (!!selectedTerritory && this.isFortifyAllowed(selectedTerritory, territory)))
     if (this.gameState.currentPhase === 'attack') {
@@ -60,7 +71,10 @@ export default class GameController {
     this.mapController.getTroopState(territory)!.count += troops
     this.gameState.troopsToDeploy -= troops
 
-    if (this.gameState.troopsToDeploy <= 0)
+    // Auto-advance only once there's nothing left to deploy AND no trade-in
+    // (optional or forced) is available — a player with a usable set gets a
+    // manual decision point (via Continue/trade) instead of being swept past it.
+    if (this.gameState.troopsToDeploy <= 0 && !this.hasAvailableTradeIn())
       this.startPhase('attack')
 
     return this
@@ -96,6 +110,7 @@ export default class GameController {
   attack(attackingTroops: number, attackingTerritory: string, defendingTerritory: string, diceCount?: number): GameController {
     const attackingTroopState = this.mapController.getTroopState(attackingTerritory)
     const defendingTroopState = this.mapController.getTroopState(defendingTerritory)
+    const defendingPlayer = defendingTroopState!.player.color
     const defendingTroops = defendingTroopState!.count
     const maxAttacker = diceCount ?? Math.min(attackingTroops, 3)
     console.info(`Attacking ${attackingTroops} against ${defendingTroops} troops from ${attackingTerritory} to ${defendingTerritory} with ${maxAttacker} dice`)
@@ -112,8 +127,29 @@ export default class GameController {
       defendingTroopState!.count = attackingTroops - result.attackerLosses
       defendingTroopState!.player = attackingTroopState!.player
       this.gameState.conqueredTerritoryThisTurn = true
+
+      if (this.hasPlayerLost(defendingPlayer))
+        this.transferCardsOnElimination(defendingPlayer)
     }
     return this
+  }
+
+  // Classic Risk rule: eliminating a player transfers their entire hand to
+  // the eliminator. If that pushes the eliminator's hand to the forced
+  // trade-in threshold, the game returns to deploy phase — the only phase
+  // trading happens in — so the forced cascade can be resolved immediately.
+  private transferCardsOnElimination(defeatedPlayer: string): void {
+    const attacker = this.gameState.currentPlayer
+    const defeatedHand = this.gameState.playerCards[defeatedPlayer] ?? []
+    if (defeatedHand.length === 0)
+      return
+
+    this.gameState.playerCards[attacker] = [...(this.gameState.playerCards[attacker] ?? []), ...defeatedHand]
+    this.gameState.playerCards[defeatedPlayer] = []
+    console.info(`${attacker} eliminated ${defeatedPlayer} and took their ${defeatedHand.length} card(s)`)
+
+    if (this.hasForcedTradeIn(attacker))
+      this.startPhase('deploy')
   }
 
   fortify(troops: number, fromTerritory: string, toTerritory: string): GameController {
@@ -187,7 +223,7 @@ export default class GameController {
       this.gameState.playerCards[player] = []
 
     this.gameState.playerCards[player].push(card)
-    console.info(`${player} drew a ${card} card`)
+    console.info(`${player} drew a ${card.type} card${card.territory ? ` (${card.territory})` : ''}`)
     return this
   }
 
@@ -219,11 +255,12 @@ export default class GameController {
   }
 
   // The bonus troops awarded for the Nth trade-in this game (1-indexed), per the
-  // selected cardBonusMode. Fixed mode always awards the same flat amount; progressive
-  // mode follows the classic escalating Risk table (see PROGRESSIVE_CARD_BONUS_TABLE).
-  getCardTradeBonus(tradeNumber: number): number {
+  // selected cardBonusMode. Fixed mode awards a distinct amount per resolved set
+  // kind (see FIXED_CARD_BONUS_TABLE); progressive mode ignores setKind entirely
+  // and follows the classic escalating Risk table (see PROGRESSIVE_CARD_BONUS_TABLE).
+  getCardTradeBonus(tradeNumber: number, setKind: CardSetKind): number {
     if (this.gameState.cardBonusMode === 'fixed')
-      return FIXED_CARD_BONUS
+      return FIXED_CARD_BONUS_TABLE[setKind]
 
     if (tradeNumber <= PROGRESSIVE_CARD_BONUS_TABLE.length)
       return PROGRESSIVE_CARD_BONUS_TABLE[tradeNumber - 1]
@@ -232,35 +269,68 @@ export default class GameController {
     return PROGRESSIVE_CARD_BONUS_TABLE[PROGRESSIVE_CARD_BONUS_TABLE.length - 1] + stepsPastTable * PROGRESSIVE_CARD_BONUS_STEP
   }
 
-  // A set of exactly 3 cards is valid if it is three of a kind, one of each
-  // non-wildcard type, or some mix of those made up with wildcards (wildcards
-  // substitute for any type).
-  isValidCardSet(cards: CardType[]): boolean {
+  // Resolves a set of exactly 3 cards to the specific kind it forms (wildcards
+  // substitute for whichever type(s) make it valid), or null if no valid set
+  // exists at all. Ties always favor "mixed" (one of each) since it is worth at
+  // least as much as any three-of-a-kind in every bonus mode, so a set that could
+  // be read either way (e.g. one real card plus two wildcards) always resolves
+  // to the interpretation that's at least as good for the trading player.
+  resolveCardSetKind(cards: Card[]): CardSetKind | null {
     if (cards.length !== 3)
-      return false
+      return null
 
-    const wildcardCount = cards.filter(card => card === 'wildcard').length
-    const fixedCards = cards.filter(card => card !== 'wildcard')
+    const types = cards.map(card => card.type)
+    const fixedTypes = types.filter(type => type !== 'wildcard')
+    const distinctFixedTypes = new Set(fixedTypes)
 
-    const tryAssign = (assigned: CardType[], wildcardsLeft: number): boolean => {
-      if (wildcardsLeft === 0)
-        return this.isThreeOfAKindOrOneOfEach(assigned)
+    // "Mixed" (one of each) is achievable whenever the real (non-wildcard)
+    // cards are already pairwise distinct — any wildcards fill in the rest.
+    if (distinctFixedTypes.size === fixedTypes.length)
+      return 'mixed'
 
-      return NON_WILDCARD_TYPES.some(type => tryAssign([...assigned, type], wildcardsLeft - 1))
-    }
+    // Otherwise, three-of-a-kind is only achievable if every real card is the
+    // same type (that type is then the only possible resolution).
+    if (distinctFixedTypes.size === 1)
+      return fixedTypes[0] as CardSetKind
 
-    return tryAssign(fixedCards, wildcardCount)
+    return null
   }
 
-  private isThreeOfAKindOrOneOfEach(cards: CardType[]): boolean {
-    const distinctTypes = new Set(cards)
-    return distinctTypes.size === 1 || distinctTypes.size === 3
+  isValidCardSet(cards: Card[]): boolean {
+    return this.resolveCardSetKind(cards) !== null
+  }
+
+  // Whether any 3-card subset of the player's current hand forms a valid set
+  // (an "available" trade-in, whether optional or forced).
+  hasAvailableTradeIn(player: string = this.gameState.currentPlayer): boolean {
+    const hand = this.gameState.playerCards[player] ?? []
+    for (let i = 0; i < hand.length; i++) {
+      for (let j = i + 1; j < hand.length; j++) {
+        for (let k = j + 1; k < hand.length; k++) {
+          if (this.resolveCardSetKind([hand[i], hand[j], hand[k]]) !== null)
+            return true
+        }
+      }
+    }
+    return false
+  }
+
+  // A hand at or above the threshold must trade before any other action is
+  // available (see isSelectable's deploy-phase gate and startPlayerTurn).
+  hasForcedTradeIn(player: string = this.gameState.currentPlayer): boolean {
+    return this.getPlayerCardTotal(player) >= FORCED_TRADE_IN_THRESHOLD
   }
 
   // Validates and executes a card trade-in: removes the 3 selected cards (by index
-  // into the current player's hand) and adds the resulting bonus troops to their
-  // troopsToDeploy pool. No-op (with a console warning) if the selection is invalid.
-  tradeCards(cardIndices: number[]): GameController {
+  // into the current player's hand), returns them to the deck at a random position
+  // (so they remain in circulation), and adds the resulting bonus troops to the
+  // player's troopsToDeploy pool. No-op (with a console warning) if the selection
+  // is invalid. In Fixed mode, if the player currently occupies the territory shown
+  // on one or more of the traded (non-wildcard) cards, `bonusTerritory` selects
+  // which single occupied territory receives the +2 territory bonus — required
+  // when more than one traded territory is occupied, since the bonus applies to
+  // only one regardless of how many qualify; ignored/unused otherwise.
+  tradeCards(cardIndices: number[], bonusTerritory?: string): GameController {
     const player = this.gameState.currentPlayer
     const hand = this.gameState.playerCards[player] ?? []
 
@@ -276,7 +346,8 @@ export default class GameController {
       return this
     }
 
-    if (!this.isValidCardSet(cards)) {
+    const setKind = this.resolveCardSetKind(cards)
+    if (setKind === null) {
       console.warn(`Cannot trade cards: ${JSON.stringify(cards)} is not a valid set`)
       return this
     }
@@ -285,9 +356,23 @@ export default class GameController {
       hand.splice(index, 1)
 
     this.gameState.tradeCount += 1
-    const bonus = this.getCardTradeBonus(this.gameState.tradeCount)
+    const bonus = this.getCardTradeBonus(this.gameState.tradeCount, setKind)
     this.gameState.troopsToDeploy += bonus
-    console.info(`${player} traded in a card set for trade #${this.gameState.tradeCount}: +${bonus} troops`)
+    console.info(`${player} traded in a ${setKind} set for trade #${this.gameState.tradeCount}: +${bonus} troops`)
+
+    if (this.gameState.cardBonusMode === 'fixed') {
+      const occupiedTerritories = cards
+        .filter((card): card is Card & { territory: string } => !!card.territory && this.mapController.getTerritoryOwner(card.territory) === player)
+        .map(card => card.territory)
+      const territory = (bonusTerritory && occupiedTerritories.includes(bonusTerritory)) ? bonusTerritory : occupiedTerritories[0]
+      if (territory) {
+        this.mapController.getTroopState(territory)!.count += 2
+        console.info(`${player} occupies ${territory} — +2 territory bonus applied`)
+      }
+    }
+
+    const randomPosition = randInt(0, this.gameState.deck.length)
+    this.gameState.deck.splice(randomPosition, 0, ...cards)
 
     return this
   }

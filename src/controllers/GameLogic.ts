@@ -1,5 +1,6 @@
 import GameController from '@/controllers/GameController'
 import { distribute, shuffle, shuffled } from '@/lib/Random'
+import Card from '@/models/Card'
 import { CardBonusMode } from '@/models/CardBonusMode'
 import { CardType } from '@/models/CardType'
 import GameState from '@/models/GameState'
@@ -136,12 +137,13 @@ export default class GameLogic {
     return visited.size === remaining.length
   }
 
-  // The classic Risk card deck: one card per territory (per mapConfig.cards.territories)
-  // plus a handful of wildcards, shuffled into a persistent draw pile.
-  static buildCardDeck(mapConfig: MapConfig): CardType[] {
-    const deck: CardType[] = [
-      ...Object.values(mapConfig.cards.territories),
-      ...Array(mapConfig.cards.wildcards).fill('wildcard' as CardType),
+  // The classic Risk card deck: one unique card per territory (per
+  // mapConfig.cards.territories) plus a handful of wildcards (no territory),
+  // shuffled into a persistent draw pile.
+  static buildCardDeck(mapConfig: MapConfig): Card[] {
+    const deck: Card[] = [
+      ...Object.entries(mapConfig.cards.territories).map(([territory, type]) => ({ type, territory })),
+      ...Array(mapConfig.cards.wildcards).fill(null).map((): Card => ({ type: 'wildcard' as CardType })),
     ]
     shuffle(deck)
     return deck
@@ -150,7 +152,7 @@ export default class GameLogic {
   static initState(mapConfig: MapConfig, playerConfigs: PlayerConfig[], blizzardsEnabled: boolean, gameOver: boolean = false, fogEnabled: boolean = false, cardBonusMode: CardBonusMode = 'fixed'): GameState {
     const [troops, blizzards] = this.autoSetupTroops(mapConfig, playerConfigs, blizzardsEnabled)
 
-    const playerCards: Record<string, CardType[]> = {}
+    const playerCards: Record<string, Card[]> = {}
     playerConfigs.forEach((player) => {
       playerCards[player.color] = []
     })

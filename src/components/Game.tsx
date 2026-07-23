@@ -17,6 +17,7 @@ const Game = () => {
   const [attackDiceCount, setAttackDiceCount] = useState<number>(1)
   const [fortifyDestination, setFortifyDestination] = useState<string | undefined>(undefined)
   const [fortifyTroopCount, setFortifyTroopCount] = useState<number>(1)
+  const [deployTroopCount, setDeployTroopCount] = useState<number>(1)
   const [attackResult, setAttackResult] = useState<DiceResultData | null>(null)
   const [isZoomed, setIsZoomed] = useState(false)
   const [turnChangeNotice, setTurnChangeNotice] = useState<TurnChangeBannerData | null>(null)
@@ -53,6 +54,13 @@ const Game = () => {
       setEliminationNotice({ playerName: newlyEliminated.name })
   }, [gameState])
 
+  // Default the deploy picker to "place everything remaining" whenever the
+  // remaining pool changes (a new turn, a trade-in bonus) — the player can
+  // still reduce it before clicking a territory to split their deployment.
+  useEffect(() => {
+    setDeployTroopCount(gameState.troopsToDeploy)
+  }, [gameState.troopsToDeploy])
+
   const maxAttackDice = selectedTerritory && gameState.currentPhase === 'attack'
     ? Math.min(gameController.getTroopCount(selectedTerritory) - 1, 3)
     : 0
@@ -60,6 +68,8 @@ const Game = () => {
   const maxFortifyTroops = selectedTerritory && gameState.currentPhase === 'fortify'
     ? gameController.getTroopCount(selectedTerritory) - 1
     : 0
+
+  const maxDeployTroops = gameState.currentPhase === 'deploy' ? gameState.troopsToDeploy : 0
 
   const resetFortifySelection = () => {
     setFortifyDestination(undefined)
@@ -87,6 +97,11 @@ const Game = () => {
     setFortifyTroopCount(clamped)
   }
 
+  const handleDeployTroopCountChange = (count: number) => {
+    const clamped = Math.min(Math.max(count, 1), Math.max(maxDeployTroops, 1))
+    setDeployTroopCount(clamped)
+  }
+
   const handleFortifyConfirm = () => {
     if (!selectedTerritory || !fortifyDestination)
       return
@@ -103,7 +118,8 @@ const Game = () => {
 
     if (gameState.currentPhase === 'deploy') {
       setEliminationNotice(null)
-      setGameState(gameController.deploy(gameState.troopsToDeploy, territory).gameState)
+      const amount = Math.min(Math.max(deployTroopCount, 1), gameState.troopsToDeploy)
+      setGameState(gameController.deploy(amount, territory).gameState)
       return
     }
     if (selectedTerritory === territory) {
@@ -115,14 +131,14 @@ const Game = () => {
       setSelectedTerritory(territory)
       resetFortifySelection()
       const newMax = Math.min(gameController.getTroopCount(territory) - 1, 3)
-      setAttackDiceCount(Math.min(attackDiceCount, Math.max(newMax, 1)))
+      setAttackDiceCount(Math.max(newMax, 1))
       return
     }
     if (gameState.currentPhase === 'attack') {
       if (gameController.mapController.getTerritoryOwner(territory) === gameState.currentPlayer) {
         setSelectedTerritory(territory)
         const newMax = Math.min(gameController.getTroopCount(territory) - 1, 3)
-        setAttackDiceCount(Math.min(attackDiceCount, Math.max(newMax, 1)))
+        setAttackDiceCount(Math.max(newMax, 1))
         return
       }
       setEliminationNotice(null)
@@ -161,6 +177,9 @@ const Game = () => {
         maxFortifyTroops={maxFortifyTroops}
         onFortifyTroopCountChange={handleFortifyTroopCountChange}
         onFortifyConfirm={handleFortifyConfirm}
+        deployTroopCount={deployTroopCount}
+        maxDeployTroops={maxDeployTroops}
+        onDeployTroopCountChange={handleDeployTroopCountChange}
       />
       <Map
         class={isZoomed ? style.GameMapFullscreen : style.GameMapSafeArea}

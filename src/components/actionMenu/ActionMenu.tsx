@@ -5,6 +5,7 @@ import PhaseEndButton from '@/components/actionMenu/PhaseEndButton'
 import { PhaseIndicator } from '@/components/actionMenu/PhaseIndicator'
 import Avatar from '@/components/Avatar'
 import GameContext from '@/components/GameContext'
+import GameController from '@/controllers/GameController'
 
 export interface ActionMenuProps {
   handleEndPhase: () => void
@@ -16,10 +17,14 @@ export interface ActionMenuProps {
   maxFortifyTroops?: number
   onFortifyTroopCountChange?: (count: number) => void
   onFortifyConfirm?: () => void
+  deployTroopCount?: number
+  maxDeployTroops?: number
+  onDeployTroopCountChange?: (count: number) => void
 }
 
 const ActionMenu = (props: ActionMenuProps) => {
   const { gameState } = useContext(GameContext)
+  const gameController = new GameController(gameState)
   const currentPlayerConfig = gameState.playerConfigs.find(x => x.color === gameState.currentPlayer)
   if (!currentPlayerConfig)
     return <></>
@@ -37,6 +42,13 @@ const ActionMenu = (props: ActionMenuProps) => {
     && props.fortifyTroopCount !== undefined
     && props.onFortifyTroopCountChange !== undefined
     && props.onFortifyConfirm !== undefined
+
+  const showDeploySelector = gameState.currentPhase === 'deploy'
+    && props.maxDeployTroops !== undefined
+    && props.maxDeployTroops > 0
+    && props.deployTroopCount !== undefined
+    && props.onDeployTroopCountChange !== undefined
+    && !gameController.hasForcedTradeIn()
 
   const stopPropagation = <T extends { stopPropagation: () => void }>(e: T) => e.stopPropagation()
 
@@ -119,6 +131,39 @@ const ActionMenu = (props: ActionMenuProps) => {
           >
             Confirm
           </button>
+        </div>
+      )}
+
+      {showDeploySelector && (
+        <div className={style.DeploySelectorRow} onClick={stopPropagation}>
+          <span className={style.DeploySelectorLabel}>Troops to deploy here:</span>
+          <div className={style.DeployStepper}>
+            <button
+              type="button"
+              className={style.DeployStepBtn}
+              disabled={props.deployTroopCount! <= 1}
+              onClick={() => props.onDeployTroopCountChange!(props.deployTroopCount! - 1)}
+            >
+              −
+            </button>
+            <input
+              type="range"
+              className={style.DeploySlider}
+              min={1}
+              max={props.maxDeployTroops}
+              value={props.deployTroopCount}
+              onChange={e => props.onDeployTroopCountChange!(Number(e.target.value))}
+            />
+            <span className={style.DeployCount}>{props.deployTroopCount}</span>
+            <button
+              type="button"
+              className={style.DeployStepBtn}
+              disabled={props.deployTroopCount! >= props.maxDeployTroops!}
+              onClick={() => props.onDeployTroopCountChange!(props.deployTroopCount! + 1)}
+            >
+              +
+            </button>
+          </div>
         </div>
       )}
     </div>

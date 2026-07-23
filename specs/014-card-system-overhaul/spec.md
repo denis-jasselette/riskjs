@@ -8,6 +8,41 @@
 
 **Input**: User description: "Card System Overhaul for RiskJS — rebuild cards as unique, individually-dealt, territory-tied objects (no duplicates), gate the deploy-to-attack transition on whether an optional or forced trade-in is available, add a forced trade-in cascade (loops until hand < 5), return traded cards to a reshuffled deck instead of discarding them, replace the placeholder Fixed-mode bonus with the real +4/+6/+8/+10 table, and add a Fixed-mode-only +2-on-occupied-territory bonus (non-cumulative, one per trade-in). Progressive mode's existing table is unchanged. Depends on Win Conditions & Elimination (013) for the elimination-transfer trigger; this feature owns the forced-trade-in mechanic itself."
 
+## Clarifications
+
+### Session 2026-07-23 (implementation feedback)
+
+- Q: Should the hand UI show which territory each card depicts, and whether
+  it's currently eligible for the +2 occupied-territory bonus? → A: Yes —
+  this was implied by cards carrying a territory (User Story 1 / the Card
+  entity) but never stated as a UI requirement; it's now explicit (see
+  FR-015 and the amended User Story 6).
+- Q: When more than one traded (non-wildcard) card's territory is currently
+  occupied by the trading player, who picks which one receives the +2
+  bonus — the system automatically, or the player? → A: The player. The
+  original draft (User Story 6, FR-013) left this to the system with no
+  stated tie-break; that's corrected here — the player is shown a choice
+  whenever more than one traded territory qualifies, and the bonus is
+  applied automatically without a prompt only when exactly one qualifies.
+- Q: (Resolving the second Edge Case below) Can a forced trade-in ever occur
+  with no valid 3-card set actually in hand? → A: No — proven impossible.
+  With 5+ cards drawn from only 3 non-wildcard types (wildcards only ever
+  make this easier), if no type reaches 3 copies, pigeonhole guarantees all
+  3 types are present with at least 1 each (since 2 types capped at 2 copies
+  sum to at most 4, short of 5), which is itself a valid "one of each" set.
+  No special-case handling is needed; this is not a runtime condition to
+  guard against.
+- Q: This feature depends on Win Conditions & Elimination (013) for the
+  elimination-transfer trigger, but 013 doesn't exist yet — what's the
+  actual scope of what was built? → A: Only the minimal trigger this
+  feature itself needs: when an attack eliminates a player (reduces them to
+  zero territories), their entire hand transfers to the eliminator, and if
+  that reaches the forced-trade-in threshold, the game returns to deploy
+  phase (the only phase trading happens in) so the cascade can resolve
+  immediately. Everything else 013 owns — win/game-over detection,
+  resignation, ranking, personal elimination screens — remains unbuilt and
+  is not part of what this feature covers.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Every card is unique and never duplicated (Priority: P1)
@@ -163,10 +198,13 @@ amount.
 ### User Story 6 - Occupying a traded card's territory earns a bonus, once (Priority: P3)
 
 When trading in a set under Fixed mode, if the player currently occupies the
-territory shown on any one of the three traded (non-wildcard) cards, they
-receive 2 additional troops placed directly on that territory — but only
-once per trade-in, even if they occupy more than one of the traded
-territories.
+territory shown on one or more of the three traded (non-wildcard) cards,
+they receive 2 additional troops placed directly on one such territory — but
+only once per trade-in. If exactly one traded territory is occupied, that
+territory receives the bonus automatically; if more than one qualifies, the
+player is shown which ones qualify and picks the one that receives it before
+the trade can be confirmed. The hand itself shows, per card, the territory
+it depicts and whether that territory currently qualifies.
 
 **Why this priority**: A nice-to-have strategic bonus layered on top of the
 core trade-in mechanic; lowest priority since the trade-in system is fully
@@ -174,27 +212,29 @@ functional and correct without it.
 
 **Independent Test**: Trade in a set under Fixed mode where the player
 currently occupies exactly one of the traded territories, and confirm that
-territory gains 2 troops automatically; separately, trade in a set where the
-player occupies two or all three of the traded territories, and confirm the
-bonus is still only applied once, not multiple times.
+territory gains 2 troops automatically without a prompt; separately, trade in
+a set where the player occupies two or all three of the traded territories,
+and confirm they are prompted to choose which one receives the bonus, and
+that only the chosen one gains troops.
 
 **Acceptance Scenarios**:
 
 1. **Given** Fixed mode is active and a player trades in a set where they
    currently occupy the territory shown on exactly one of the three cards,
    **When** the trade completes, **Then** 2 troops are added directly to
-   that occupied territory.
+   that occupied territory automatically, with no choice required.
 2. **Given** Fixed mode is active and a player occupies the territories shown
-   on two or all three of the traded cards, **When** the trade completes,
-   **Then** only one +2 territory bonus is applied in total, not one per
-   matching territory.
+   on two or all three of the traded cards, **When** they select that set to
+   trade, **Then** they are presented with a choice of which qualifying
+   territory receives the bonus, and confirming the trade with a choice made
+   applies the +2 bonus to only that one territory.
 3. **Given** Fixed mode is active and none of the traded cards' territories
    (excluding any wildcard, which has no territory) are currently occupied by
    the trading player, **When** the trade completes, **Then** no territory
    bonus is applied.
 4. **Given** Progressive mode is active, **When** any trade-in completes,
-   **Then** no territory-occupation bonus is ever applied, regardless of
-   which territories the player occupies.
+   **Then** no territory-occupation bonus is ever applied or shown as
+   eligible, regardless of which territories the player occupies.
 
 ---
 
@@ -205,12 +245,9 @@ bonus is still only applied once, not multiple times.
   proceed with no card drawn, and does this ever realistically occur on the
   standard 42-territory map given how few trade-ins typically happen in a
   game?
-- What happens if a player's hand contains a forced trade-in requirement but
-  no valid 3-card set actually exists in their hand at all (e.g. an unlikely
-  distribution of card types) — since 5 cards drawn from a deck with only 3
-  underlying types plus wildcards should always contain a valid set by
-  pigeonhole, is this considered impossible, or does it need explicit
-  handling?
+- Resolved: a forced trade-in can never occur with no valid 3-card set in
+  hand — proven impossible by pigeonhole once the hand reaches 5 cards (see
+  2026-07-23 Clarifications). No special-case handling exists or is needed.
 - How does the territory-occupation bonus behave if the player's occupied
   matching territory is somehow not a legal place to add troops at that
   moment (e.g. an edge case in a future rule interaction) — is this
@@ -255,18 +292,29 @@ bonus is still only applied once, not multiple times.
   one of each type.
 - **FR-011**: In Fixed bonus mode, when a set includes one or more wildcards,
   system MUST assign each wildcard to whichever type makes the set valid, and
-  award the bonus corresponding to the resulting set type.
+  award the bonus corresponding to the resulting set type. When more than one
+  resolution is valid (e.g. one real card plus two wildcards, which could
+  become either three-of-a-kind or a mixed set), system MUST resolve to the
+  reading worth the highest bonus — in practice this always means preferring
+  "mixed" (+10) over any three-of-a-kind resolution whenever both are
+  possible.
 - **FR-012**: System MUST leave Progressive bonus mode's existing bonus table
   and behavior (4, 6, 8, 10, 12, 15, then +5 per further trade, tracked
   globally across all players) unchanged.
 - **FR-013**: In Fixed bonus mode only, if the trading player currently
-  occupies the territory shown on at least one of the three traded
-  (non-wildcard) cards, system MUST add 2 troops directly to one such
-  occupied territory, applied exactly once per trade-in regardless of how
-  many of the traded territories they occupy.
+  occupies the territory shown on exactly one of the three traded
+  (non-wildcard) cards, system MUST add 2 troops directly to that territory
+  automatically. If the player occupies the territory shown on more than one
+  of the traded cards, system MUST require the player to choose which one
+  receives the bonus before the trade can be confirmed, and MUST apply the
+  bonus to only that chosen territory.
 - **FR-014**: System MUST NOT apply the territory-occupation bonus in
   Progressive mode, and MUST NOT apply it based on a wildcard card (which has
   no associated territory).
+- **FR-015**: System MUST display, for each card in a player's hand, the
+  territory it depicts (or that it is a wildcard, for wildcards), and — in
+  Fixed mode only — whether that territory currently qualifies for the +2
+  occupied-territory bonus.
 
 ### Key Entities
 
@@ -276,9 +324,13 @@ bonus is still only applied once, not multiple times.
   time between the deck and players' hands.
 - **Hand**: The set of cards currently held by a player, subject to the
   forced-trade-in threshold (5+) and the optional-trade-in phase-gating rule.
+  Displayed with each card's territory and, in Fixed mode, its bonus
+  eligibility (FR-015).
 - **Trade-In**: The act of exchanging a valid 3-card set for a troop bonus
   (per the active bonus mode) and, in Fixed mode only, a possible
-  territory-occupation bonus; returns the 3 cards to the deck afterward.
+  territory-occupation bonus — applied to a player-chosen territory when more
+  than one traded territory qualifies (FR-013); returns the 3 cards to the
+  deck afterward.
 
 ## Success Criteria *(mandatory)*
 
@@ -302,9 +354,21 @@ bonus is still only applied once, not multiple times.
   one traded territory apply exactly one +2 territory bonus, never more than
   one regardless of how many traded territories they occupy, and never in
   Progressive mode.
+- **SC-007**: 100% of cards shown in a player's hand display their depicted
+  territory (or wildcard status); 100% of Fixed-mode trade-ins where more
+  than one traded territory is occupied require an explicit player choice
+  before the trade can be confirmed, never applying the bonus to an
+  unchosen territory.
 
 ## Assumptions
 
+- The elimination-transfer trigger actually implemented is scoped narrowly
+  to what this feature needs: an attack reducing a player to zero
+  territories transfers their hand to the eliminator and, if that reaches
+  the forced threshold, returns the game to deploy phase. The rest of Win
+  Conditions & Elimination (013) — win/game-over detection, resignation,
+  ranking, personal elimination screens — remains unbuilt and is not part of
+  what shipped here (see 2026-07-23 Clarifications).
 - This feature depends on the separate, already-specified Win Conditions &
   Elimination feature (013) to determine when a defeated player's cards
   transfer to another player and whether that transfer is skipped (because
