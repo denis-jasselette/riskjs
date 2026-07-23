@@ -34,7 +34,7 @@ files or directories, per plan.md's Structure Decision.
 
 **Purpose**: Confirm a clean starting point before touching turn-start logic
 
-- [ ] T001 Run `pnpm run lint && pnpm run test && pnpm run build` from the
+- [x] T001 Run `pnpm run lint && pnpm run test && pnpm run build` from the
   repo root and confirm all three pass with no pre-existing failures in
   `src/controllers/GameController.ts` / `src/controllers/GameController.test.ts`,
   per the constitution's CI-gate principle.
@@ -49,7 +49,7 @@ is the scaffold every user story below extends.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 In `src/controllers/GameController.ts`, add a new method
+- [x] T002 In `src/controllers/GameController.ts`, add a new method
   `calculateReinforcement(player: string, capitalsOwned: number = 0): number`
   that currently just `return 3` (preserves existing behavior exactly), and
   update `startPlayerTurn()` to replace the hardcoded
@@ -74,7 +74,7 @@ confirm they receive 3; give another player a large number of territories
 
 ### Tests for User Story 1
 
-- [ ] T003 [US1] In `src/controllers/GameController.test.ts`, add test
+- [x] T003 [US1] In `src/controllers/GameController.test.ts`, add test
   cases for `calculateReinforcement`/`startPlayerTurn` asserting: a player
   owning 1–8 territories receives exactly 3 (SC-001, Acceptance Scenario 1);
   a player owning 12 territories receives 4, and 15 territories receives 5
@@ -83,7 +83,7 @@ confirm they receive 3; give another player a large number of territories
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] In `src/controllers/GameController.ts`, implement the
+- [x] T004 [US1] In `src/controllers/GameController.ts`, implement the
   territory rule inside `calculateReinforcement`: replace the flat `3` with
   `Math.max(3, Math.floor(this.getPlayerTerritoryTotal(player) / 3))`
   (FR-002).
@@ -106,7 +106,7 @@ in a continent and confirm no bonus is awarded for it.
 
 ### Tests for User Story 2
 
-- [ ] T005 [US2] In `src/controllers/GameController.test.ts`, add test
+- [x] T005 [US2] In `src/controllers/GameController.test.ts`, add test
   cases covering: owning every non-frozen territory in a continent awards
   its `bonusTroops` (Acceptance Scenario 1, SC-003); owning all but one
   unfrozen territory in a continent awards nothing for it (Acceptance
@@ -119,7 +119,7 @@ in a continent and confirm no bonus is awarded for it.
 
 ### Implementation for User Story 2
 
-- [ ] T006 [US2] In `src/controllers/GameController.ts`, extend
+- [x] T006 [US2] In `src/controllers/GameController.ts`, extend
   `calculateReinforcement` to add a continent bonus term: iterate
   `Object.keys(this.gameState.mapConfig.continents)`, and for each
   continent `c` where `this.mapController.getContinentOwner(c) === player`,
@@ -145,7 +145,7 @@ amount is ever added.
 
 ### Tests for User Story 3
 
-- [ ] T007 [US3] In `src/controllers/GameController.test.ts`, add test
+- [x] T007 [US3] In `src/controllers/GameController.test.ts`, add test
   cases asserting: `calculateReinforcement(player, 1)` adds the per-capital
   bonus once (Acceptance Scenario 1); `calculateReinforcement(player, 3)`
   adds three times the bonus (Acceptance Scenario 2, FR-007); calling
@@ -155,7 +155,7 @@ amount is ever added.
 
 ### Implementation for User Story 3
 
-- [ ] T008 [US3] In `src/controllers/GameController.ts`, add a named
+- [x] T008 [US3] In `src/controllers/GameController.ts`, add a named
   constant `CAPITAL_REINFORCEMENT_BONUS = 2` near the top of the file
   (matching the existing card-bonus constant style in `GameLogic.ts`), and
   add `capitalsOwned * CAPITAL_REINFORCEMENT_BONUS` to
@@ -171,20 +171,20 @@ reinforcement formula (territory + continent + capital) is implemented.
 **Purpose**: Close remaining spec requirements that cut across all three
 stories
 
-- [ ] T009 [US1] In `src/controllers/GameController.test.ts`, add a
+- [x] T009 [US1] In `src/controllers/GameController.test.ts`, add a
   regression test for SC-005: after a player captures a
   continent-completing territory during turn N, their
   `calculateReinforcement` result (and `troopsToDeploy` via
   `startPlayerTurn`) reflects the new continent bonus the next time their
   turn starts.
-- [ ] T010 In `src/controllers/GameController.test.ts`, add a boundary test
+- [x] T010 In `src/controllers/GameController.test.ts`, add a boundary test
   for the Edge Cases section: a continent with zero non-frozen territories
   awards its bonus to no one (covered by `getContinentOwner` returning
   `undefined` for an empty territory list — add an explicit regression test
   so this doesn't silently regress).
-- [ ] T011 Run `pnpm run lint && pnpm run test && pnpm run build` from the
+- [x] T011 Run `pnpm run lint && pnpm run test && pnpm run build` from the
   repo root and fix any failures, per the constitution's CI-gate principle.
-- [ ] T012 Follow `specs/008-reinforcement-calculation/quickstart.md`'s
+- [x] T012 Follow `specs/008-reinforcement-calculation/quickstart.md`'s
   manual validation steps in the browser (`pnpm run dev`): confirm the
   deploy-phase troop count shown at turn start matches the new formula for
   territory count, continent control, and (once testable) capital

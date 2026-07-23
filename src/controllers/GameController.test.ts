@@ -47,6 +47,60 @@ const player2: PlayerConfig = {
   position: 1,
 }
 
+// Map for calculateReinforcement() tests: two continents, deliberately shaped
+// so each rule can be exercised in isolation.
+//   - Alpha has a 0 bonus and 12 territories -> isolates the territory rule
+//     (owning all of Alpha never contributes a continent bonus).
+//   - Beta has a 7 bonus and 2 territories -> isolates the continent rule
+//     (owning both/none of Beta never crosses a territory-rule threshold on
+//     its own within these tests).
+function buildReinforcementMapConfig(): MapConfig {
+  const config = new MapConfig()
+  config.name = 'ReinforcementTestMap'
+  config.width = 100
+  config.height = 100
+  config.troopSize = 20
+  config.continents = {
+    Alpha: { bonusTroops: 0, path: '' },
+    Beta: { bonusTroops: 7, path: '' },
+  }
+  config.territories = {}
+  for (let i = 1; i <= 12; i++) {
+    config.territories[`A${i}`] = { coords: { x: i, y: 0 }, continent: 'Alpha', path: '', adjacency: [] }
+  }
+  config.territories.B1 = { coords: { x: 0, y: 1 }, continent: 'Beta', path: '', adjacency: [] }
+  config.territories.B2 = { coords: { x: 1, y: 1 }, continent: 'Beta', path: '', adjacency: [] }
+  config.cards = { wildcards: 2, territories: {} }
+  config.blizzards = 0
+  return config
+}
+
+function buildReinforcementGameState(): GameState {
+  const gs = new GameState()
+  gs.gameOver = false
+  gs.mapConfig = buildReinforcementMapConfig()
+  gs.playerConfigs = [player1, player2]
+  gs.blizzards = []
+  gs.currentPlayer = 'red'
+  gs.currentPhase = 'deploy'
+  gs.troopsToDeploy = 0
+  gs.troops = []
+  gs.deck = []
+  gs.playerCards = { red: [], blue: [] }
+  gs.conqueredTerritoryThisTurn = false
+  gs.tradeCount = 0
+  gs.cardBonusMode = 'fixed'
+  return gs
+}
+
+// Assigns the given territories to the given player in gameState.troops
+// (1 troop each; troop count is irrelevant to reinforcement calculation).
+function ownTerritories(gs: GameState, player: PlayerConfig, territories: string[]) {
+  for (const territory of territories) {
+    gs.troops.push({ territory, count: 1, player })
+  }
+}
+
 function buildGameState(): GameState {
   const gs = new GameState()
   gs.gameOver = false
@@ -165,9 +219,12 @@ describe('GameController', () => {
       expect(controller.gameState.currentPlayer).toBe('blue')
     })
 
-    it('resets troopsToDeploy to 3 for the next player', () => {
+    it('recalculates troopsToDeploy for the next player via calculateReinforcement', () => {
+      // Next player is blue, who fully controls the South continent (bonus 2)
+      // in this fixture, on top of the territory-rule minimum of 3.
       controller.fortify(1, 'A', 'B')
-      expect(controller.gameState.troopsToDeploy).toBe(3)
+      expect(controller.gameState.troopsToDeploy).toBe(controller.calculateReinforcement('blue'))
+      expect(controller.gameState.troopsToDeploy).toBe(5)
     })
 
     it('transitions back to deploy phase for the next player', () => {
@@ -457,6 +514,118 @@ describe('GameController', () => {
 
     it('returns 0 for a player with no cards', () => {
       expect(controller.getPlayerCardTotal('blue')).toBe(0)
+    })
+  })
+
+  // --------------------------------------------------------
+  describe('calculateReinforcement()', () => {
+    let reinforcementController: GameController
+    let gs: GameState
+
+    beforeEach(() => {
+      gs = buildReinforcementGameState()
+      reinforcementController = new GameController(gs)
+    })
+
+    describe('territory rule', () => {
+      it('awards the minimum of 3 when owning fewer than 9 territories', () => {
+        ownTerritories(gs, player1, ['A1', 'A2'])
+        expect(reinforcementController.calculateReinforcement('red')).toBe(3)
+      })
+
+      it('awards the minimum of 3 at exactly 8 territories (just below the next threshold)', () => {
+        ownTerritories(gs, player1, ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8'])
+        expect(reinforcementController.calculateReinforcement('red')).toBe(3)
+      })
+
+      it('increases by 1 for every additional group of 3 territories above the minimum', () => {
+        ownTerritories(gs, player1, ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9'])
+        // 9 territories -> floor(9/3) = 3, still the minimum
+        expect(reinforcementController.calculateReinforcement('red')).toBe(3)
+
+        ownTerritories(gs, player1, ['A10', 'A11', 'A12'])
+        // 12 territories -> floor(12/3) = 4
+        expect(reinforcementController.calculateReinforcement('red')).toBe(4)
+      })
+
+      it('never produces a negative or undefined result when the player owns zero territories', () => {
+        expect(reinforcementController.calculateReinforcement('red')).toBe(3)
+      })
+    })
+
+    describe('continent rule', () => {
+      it('awards the continent bonus when the player owns every territory in it', () => {
+        ownTerritories(gs, player1, ['B1', 'B2'])
+        // territory rule: max(3, floor(2/3)) = 3; continent rule: Beta bonus 7
+        expect(reinforcementController.calculateReinforcement('red')).toBe(3 + 7)
+      })
+
+      it('awards no continent bonus when missing one non-frozen territory', () => {
+        ownTerritories(gs, player1, ['B1'])
+        ownTerritories(gs, player2, ['B2'])
+        expect(reinforcementController.calculateReinforcement('red')).toBe(3)
+      })
+
+      it('still awards the continent bonus when the missing territory is blizzard-frozen', () => {
+        // Mutate in place: GameController's constructor shallow-copies gameState,
+        // so reassigning gs.blizzards after construction would not be visible
+        // to the controller -- only in-place mutation of the shared array is.
+        gs.blizzards.push('B2')
+        ownTerritories(gs, player1, ['B1'])
+        // B2 is frozen, so Beta's full-control check ignores it entirely.
+        expect(reinforcementController.calculateReinforcement('red')).toBe(3 + 7)
+      })
+
+      it('sums bonuses across every continent the player fully controls', () => {
+        ownTerritories(gs, player1, ['B1', 'B2', ...Array.from({ length: 12 }, (_, i) => `A${i + 1}`)])
+        // territory rule: floor(14/3) = 4; continent rule: Alpha (0) + Beta (7)
+        expect(reinforcementController.calculateReinforcement('red')).toBe(4 + 0 + 7)
+      })
+
+      it('treats a resigned player\'s territories as normally owned for another player\'s continent check', () => {
+        // No "resigned" concept exists on PlayerConfig/GameState yet, so a
+        // resigned player's territories are indistinguishable from a normal
+        // owner's here -- they still block the other player's full control.
+        ownTerritories(gs, player1, ['B1'])
+        ownTerritories(gs, player2, ['B2']) // stands in for a "resigned" player2
+        expect(reinforcementController.calculateReinforcement('red')).toBe(3)
+      })
+
+      it('awards no bonus to anyone when every territory in a continent is blizzard-frozen', () => {
+        gs.blizzards.push('B1', 'B2')
+        expect(reinforcementController.calculateReinforcement('red')).toBe(3)
+        expect(reinforcementController.calculateReinforcement('blue')).toBe(3)
+      })
+    })
+
+    describe('capital rule', () => {
+      it('adds nothing when capitalsOwned is omitted (capital mode inactive)', () => {
+        ownTerritories(gs, player1, ['A1', 'A2'])
+        expect(reinforcementController.calculateReinforcement('red')).toBe(3)
+      })
+
+      it('adds the per-capital bonus for one capital owned', () => {
+        ownTerritories(gs, player1, ['A1', 'A2'])
+        expect(reinforcementController.calculateReinforcement('red', 1)).toBe(3 + 2)
+      })
+
+      it('multiplies the per-capital bonus by the number of capitals owned', () => {
+        ownTerritories(gs, player1, ['A1', 'A2'])
+        expect(reinforcementController.calculateReinforcement('red', 3)).toBe(3 + 6)
+      })
+
+      it('adds no capital bonus when capitalsOwned is explicitly 0', () => {
+        ownTerritories(gs, player1, ['A1', 'A2'])
+        expect(reinforcementController.calculateReinforcement('red', 0)).toBe(3)
+      })
+    })
+
+    describe('combined total', () => {
+      it('sums territory, continent, and capital rules together', () => {
+        ownTerritories(gs, player1, ['B1', 'B2', ...Array.from({ length: 10 }, (_, i) => `A${i + 1}`)])
+        // territory: floor(12/3) = 4; continent: Alpha(0) + Beta(7) = 7; capital: 2 * 2 = 4
+        expect(reinforcementController.calculateReinforcement('red', 2)).toBe(4 + 7 + 4)
+      })
     })
   })
 })

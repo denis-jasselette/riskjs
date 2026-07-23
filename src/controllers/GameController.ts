@@ -146,7 +146,7 @@ export default class GameController {
 
   startPlayerTurn(player: string): GameController {
     this.gameState.currentPlayer = player
-    this.gameState.troopsToDeploy = 3
+    this.gameState.troopsToDeploy = this.calculateReinforcement(player)
     this.gameState.conqueredTerritoryThisTurn = false
     console.info(`Starting player ${player}'s turn with ${this.gameState.troopsToDeploy} troops to deploy`)
     if (this.gameState.fogEnabled) {
@@ -156,6 +156,22 @@ export default class GameController {
       this.gameState.fog = undefined
     }
     return this.startPhase('deploy')
+  }
+
+  // Start-of-turn reinforcement total: territory rule + continent rule + capital
+  // rule, recalculated fresh every time (never cached). `capitalsOwned` defaults
+  // to 0 since Capital Mode does not exist yet; once it does, the caller can pass
+  // the player's real capital count without changing this method's contract.
+  calculateReinforcement(player: string, capitalsOwned = 0): number {
+    const territoryBonus = Math.max(3, Math.floor(this.getPlayerTerritoryTotal(player) / 3))
+
+    const continentBonus = Object.keys(this.gameState.mapConfig.continents)
+      .filter(continent => this.mapController.getContinentOwner(continent) === player)
+      .reduce((sum, continent) => sum + this.gameState.mapConfig.continents[continent].bonusTroops, 0)
+
+    const capitalBonus = capitalsOwned * 2
+
+    return territoryBonus + continentBonus + capitalBonus
   }
 
   // Classic Risk rule: a player who conquered at least one territory this turn
