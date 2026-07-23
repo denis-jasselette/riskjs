@@ -1,12 +1,13 @@
 .CardHandContainer {
   position: fixed;
-  bottom: 90px;
-  right: 20px;
+  bottom: 20px;
+  // Clears PlayerStatus (fixed-width, anchored at left:0) with margin to spare.
+  left: 120px;
   z-index: 100;
 
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 8px;
 
   padding: 10px;
@@ -15,14 +16,37 @@
   background-color: var(--modal-background-color);
   box-shadow: 0px 5px 10px 5px rgba(0, 0, 0, .7);
 
+  &[data-folded=true] {
+    padding: 6px;
+    border-radius: 50%;
+  }
+
   @media (max-width: 640px) {
-    bottom: 78px;
+    // PlayerStatus becomes a full-width top bar and ActionMenu a full-width
+    // bottom bar (whose height varies when a troop selector row is active)
+    // on mobile — anchoring below the top bar instead avoids chasing that
+    // variable bottom height.
+    top: 84px;
+    bottom: auto;
+    left: auto;
     right: 8px;
-    left: 8px;
     align-items: stretch;
     border-radius: 14px;
     padding: 8px 12px;
+
+    &[data-folded=true] {
+      padding: 6px;
+      border-radius: 50%;
+    }
   }
+}
+
+.HandHeader {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .ForcedNotice {
@@ -30,6 +54,56 @@
   font-weight: 600;
   color: var(--primary-color);
   white-space: nowrap;
+}
+
+.FoldButton {
+  font-size: .75em;
+  padding: 2px 8px;
+  opacity: .7;
+}
+
+.FoldToggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+  padding: 8px;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  justify-content: center;
+
+  svg {
+    width: 16px;
+    fill: var(--text-color);
+  }
+}
+
+.FoldCount {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  font-size: .65em;
+  font-weight: 700;
+  line-height: 1;
+  min-width: 14px;
+  padding: 2px 3px;
+  border-radius: 8px;
+  background-color: var(--modal-border-color);
+  color: var(--text-color);
+}
+
+.FoldBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  font-size: .7em;
+  font-weight: 700;
+  line-height: 1;
+  padding: 3px 5px;
+  border-radius: 8px;
+  background-color: var(--primary-color);
+  color: #fff;
 }
 
 .Cards {

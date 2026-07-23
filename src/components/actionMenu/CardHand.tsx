@@ -17,11 +17,16 @@ const CARD_LABELS: Record<CardType, string> = {
 // territory each depicts and whether it's currently eligible for the Fixed-mode
 // +2 occupied-territory bonus) and, once a valid 3-card set is selected, trade
 // them in for bonus deploy troops. Only ever shown during the current user's own
-// deploy phase — trading (optional or forced) only ever happens there.
+// deploy phase — trading (optional or forced) only ever happens there. Folds down
+// to a compact badge by default (a card-count icon, with a marker for trade-in
+// availability) so it doesn't compete for space with the phase/troop-selector
+// controls; forced trade-ins always show expanded since they block all other
+// actions until resolved.
 const CardHand = () => {
   const { gameState, setGameState, viewingPlayer } = useContext(GameContext)
   const [selected, setSelected] = useState<number[]>([])
   const [bonusTerritory, setBonusTerritory] = useState<string | undefined>(undefined)
+  const [folded, setFolded] = useState<boolean>(true)
 
   const isCurrentUsersTurn = viewingPlayer === gameState.currentPlayer
   const hand = gameState.playerCards[gameState.currentPlayer] ?? []
@@ -34,6 +39,8 @@ const CardHand = () => {
   const setKind = gameController.resolveCardSetKind(selectedCards)
   const canTrade = selected.length === 3 && setKind !== null
   const forcedTradeIn = gameController.hasForcedTradeIn()
+  const availableTradeIn = gameController.hasAvailableTradeIn()
+  const showExpanded = !folded || forcedTradeIn
 
   const isOccupied = (card: Card) => !!card.territory && gameController.mapController.getTerritoryOwner(card.territory) === gameState.currentPlayer
 
@@ -66,11 +73,45 @@ const CardHand = () => {
     setBonusTerritory(undefined)
   }
 
+  if (!showExpanded) {
+    return (
+      <div className={style.CardHandContainer} data-folded="true">
+        <button
+          type="button"
+          className={style.FoldToggle}
+          onClick={(e) => {
+            e.stopPropagation()
+            setFolded(false)
+          }}
+          title={availableTradeIn ? 'Cards — trade-in available' : 'Cards'}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H288V368c0-26.5 21.5-48 48-48H448V96c0-35.3-28.7-64-64-64H64zM448 352H402.7 336c-8.8 0-16 7.2-16 16v66.7V480l32-32 64-64 32-32z" /></svg>
+          <span className={style.FoldCount}>{hand.length}</span>
+          {availableTradeIn && <span className={style.FoldBadge}>+</span>}
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className={style.CardHandContainer}>
-      {forcedTradeIn && (
-        <div className={style.ForcedNotice}>5+ cards — trade-in required</div>
-      )}
+      <div className={style.HandHeader}>
+        {forcedTradeIn && (
+          <span className={style.ForcedNotice}>5+ cards — trade-in required</span>
+        )}
+        {!forcedTradeIn && (
+          <button
+            type="button"
+            className={style.FoldButton}
+            onClick={(e) => {
+              e.stopPropagation()
+              setFolded(true)
+            }}
+          >
+            Hide
+          </button>
+        )}
+      </div>
       <div className={style.Cards}>
         {hand.map((card, index) => {
           const occupied = gameState.cardBonusMode === 'fixed' && isOccupied(card)

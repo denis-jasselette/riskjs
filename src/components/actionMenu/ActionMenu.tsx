@@ -7,6 +7,15 @@ import Avatar from '@/components/Avatar'
 import GameContext from '@/components/GameContext'
 import GameController from '@/controllers/GameController'
 
+// The custom-styled range sliders below draw their own track (no native
+// fill), so the filled-vs-remaining split communicating the current value's
+// position relative to min/max is painted here instead, via a gradient on
+// the track background.
+const sliderTrackFill = (min: number, max: number, value: number): string => {
+  const percent = max > min ? ((value - min) / (max - min)) * 100 : 100
+  return `linear-gradient(to right, var(--primary-color) ${percent}%, var(--modal-border-color) ${percent}%)`
+}
+
 export interface ActionMenuProps {
   handleEndPhase: () => void
   attackDiceCount?: number
@@ -109,6 +118,7 @@ const ActionMenu = (props: ActionMenuProps) => {
             <input
               type="range"
               className={style.FortifySlider}
+              style={{ background: sliderTrackFill(1, props.maxFortifyTroops!, props.fortifyTroopCount!) }}
               min={1}
               max={props.maxFortifyTroops}
               value={props.fortifyTroopCount}
@@ -149,6 +159,7 @@ const ActionMenu = (props: ActionMenuProps) => {
             <input
               type="range"
               className={style.DeploySlider}
+              style={{ background: sliderTrackFill(1, props.maxDeployTroops!, props.deployTroopCount!) }}
               min={1}
               max={props.maxDeployTroops}
               value={props.deployTroopCount}
