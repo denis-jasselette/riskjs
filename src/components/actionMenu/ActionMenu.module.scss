@@ -145,6 +145,8 @@
   .FortifySlider {
     flex: 1;
     min-width: 60px;
+    // Native fill-vs-track coloring, so the current value's position relative to min/max is unambiguous.
+    accent-color: var(--primary-color);
   }
 
   .FortifyCount {

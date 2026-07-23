@@ -149,12 +149,6 @@ export default class GameController {
     this.gameState.troopsToDeploy = this.calculateReinforcement(player)
     this.gameState.conqueredTerritoryThisTurn = false
     console.info(`Starting player ${player}'s turn with ${this.gameState.troopsToDeploy} troops to deploy`)
-    if (this.gameState.fogEnabled) {
-      this.gameState.fog = this.mapController.getVisibleTerritories(player)
-    }
-    else {
-      this.gameState.fog = undefined
-    }
     return this.startPhase('deploy')
   }
 

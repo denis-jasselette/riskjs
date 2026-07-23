@@ -16,7 +16,6 @@ export default class GameState {
 
   /* TODO */
   portals?: string[]
-  fog?: string[]
   fogEnabled: boolean
   troopsToDeploy: number
 

@@ -13,6 +13,9 @@ export interface TerritoriesComponentProps {
 const Territories = (props: TerritoriesComponentProps) => {
   const { gameState, viewingPlayer } = useContext(GameContext)
   const gameController = new GameController(gameState)
+  const visibleTerritories = gameState.fogEnabled
+    ? gameController.mapController.getVisibleTerritories(viewingPlayer)
+    : undefined
 
   const compareFn = (a: string, b: string): number => {
     if (a === props.selectedTerritory)
@@ -31,7 +34,7 @@ const Territories = (props: TerritoriesComponentProps) => {
         const troopState = gameController.mapController.getTroopState(territory)
         const isBlizzard = gameController.mapController.isTerritoryBlizzard(territory)
         const isSelected = territory === props.selectedTerritory
-        const isInFog = gameState.fog !== undefined && !gameState.fog.includes(territory)
+        const isInFog = visibleTerritories !== undefined && !visibleTerritories.includes(territory)
         return (
           <Territory
             key={territory}

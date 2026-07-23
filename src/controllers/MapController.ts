@@ -50,6 +50,21 @@ export class MapController {
     return undefined
   }
 
+  // Like getContinentOwner, but under fog of war a continent's owner is only
+  // revealed to viewingPlayer once every non-frozen territory in it is within
+  // their visible range (owned or directly bordering) — otherwise the owner
+  // is concealed, since showing it would leak full-control information about
+  // territories the player can't actually see.
+  getVisibleContinentOwner(continent: string, viewingPlayer: string): string | undefined {
+    const owner = this.getContinentOwner(continent)
+    if (!this.gameState.fogEnabled)
+      return owner
+
+    const visibleTerritories = this.getVisibleTerritories(viewingPlayer)
+    const fullyVisible = this.getContinentTerritories(continent).every(territory => visibleTerritories.includes(territory))
+    return fullyVisible ? owner : undefined
+  }
+
   _bfs(start: TerritoryId, end: TerritoryId, options: PathingOptions): Route | null {
     const initRoute = [start]
     if (start === end) {

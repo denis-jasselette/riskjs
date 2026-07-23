@@ -98,10 +98,10 @@
 
   @each $key, $color in colors.$troop-colors {
     &[data-player="#{$key}"] {
-      fill: lighten($color, 10%);
+      fill: color.adjust($color, $lightness: 10%);
 
       &[data-selectable=true]:hover {
-        fill: lighten($color, 25%);
+        fill: color.adjust($color, $lightness: 25%);
       }
     }
   }
@@ -111,8 +111,8 @@
     stroke-width: 20;
     stroke-dasharray: none;
     fill: #f5f5f5;
-    stroke: darken($color, 40%);
-    filter: drop-shadow(12px 24px 6px #{darken($color, 70%)});
+    stroke: color.adjust($color, $lightness: -40%);
+    filter: drop-shadow(12px 24px 6px #{color.adjust($color, $lightness: -70%)});
 
     path {
       transform: scale(.8, .6) rotate(8deg) translate(100px, 10px);
@@ -128,7 +128,7 @@
   
   @each $key, $color in colors.$troop-colors {
     &[data-player="#{$key}"] {
-      stroke: lighten($color, 10%);
+      stroke: color.adjust($color, $lightness: 10%);
     }
   }
 }

@@ -100,20 +100,27 @@ interface.
 
 ```text
 src/
+├── controllers/
+│   └── MapController.ts             # getVisibleContinentOwner() — fog-gated continent full-control check
 └── components/
-    └── board/
-        ├── Territory.tsx          # data-player derivation becomes fog-aware
-        ├── Territories.tsx        # passes isInFog (already does) + owner data
-        └── Map.module.scss        # existing [data-fog=true] fill rule — verified sufficient, not reinvented
+    ├── board/
+    │   ├── Territory.tsx             # data-player derivation is fog-aware
+    │   ├── Troop.tsx                 # dead DOM-mutating useEffect removed; data-player-color fog-aware
+    │   ├── Territories.tsx           # computes visibility live (no gameState.fog snapshot)
+    │   ├── ContinentsComponent.tsx   # border owner gated by getVisibleContinentOwner()
+    │   └── Map.module.scss           # existing [data-fog=true] fill rule — verified sufficient, not reinvented
+    └── playerStatus/
+        └── PlayerInfo.tsx            # troop/territory totals concealed for non-viewing players under fog
 ```
 
-**Note (out of scope, flagged not fixed)**: `ContinentsComponent.tsx`
-colors continent *border* lines by `MapController.getContinentOwner(name)`
+**Resolved (2026-07-23, was flagged out of scope)**: `ContinentsComponent.tsx`
+colored continent *border* lines by `MapController.getContinentOwner(name)`
 independent of fog — a viewer could infer full continent control outside
-their visible range from border color alone. This is pre-existing behavior,
-not a territory-owner leak, and isn't covered by this spec's FRs (which are
-scoped to territory owner). Not changed here; worth a future spec if
-continent-level info leakage through fog is judged in-scope later.
+their visible range from border color alone. Per the 2026-07-23
+clarifications, this is now in scope (FR-011/FR-012, User Story 3) and
+fixed via `MapController.getVisibleContinentOwner()`, which only reveals
+the owner once every non-blizzard territory in the continent is within the
+viewing player's visible range.
 
 **Structure Decision**: Single project. All work stays in the existing
 `components/board/` rendering layer; no controller/model changes, since

@@ -171,4 +171,82 @@ describe('MapController', () => {
       expect(mc.getContinentOwner('South')).toBeUndefined()
     })
   })
+
+  describe('getVisibleContinentOwner()', () => {
+    // A chain map where South is out of red's direct-border range, so
+    // partial-visibility concealment can actually be exercised (the minimal
+    // A-B-C/B-D map above makes every continent trivially visible to red via
+    // hub territory B):
+    //   A -- B -- C -- D -- E
+    // North = {A, B}, owned entirely by red.
+    // South = {C, D, E}, owned entirely by blue.
+    // Red owns {A, B}; red's visible set is {A, B} (owned) + {C} (borders B)
+    // — D and E are outside red's visible range.
+    function buildChainGameState(): GameState {
+      const gs = new GameState()
+      gs.gameOver = false
+      gs.mapConfig = new MapConfig()
+      gs.mapConfig.continents = {
+        North: { bonusTroops: 3, path: '' },
+        South: { bonusTroops: 2, path: '' },
+      }
+      gs.mapConfig.territories = {
+        A: { coords: { x: 0, y: 0 }, continent: 'North', path: '', adjacency: ['B'] },
+        B: { coords: { x: 1, y: 0 }, continent: 'North', path: '', adjacency: ['A', 'C'] },
+        C: { coords: { x: 2, y: 0 }, continent: 'South', path: '', adjacency: ['B', 'D'] },
+        D: { coords: { x: 3, y: 0 }, continent: 'South', path: '', adjacency: ['C', 'E'] },
+        E: { coords: { x: 4, y: 0 }, continent: 'South', path: '', adjacency: ['D'] },
+      }
+      gs.playerConfigs = [player1, player2]
+      gs.blizzards = []
+      gs.currentPlayer = 'red'
+      gs.currentPhase = 'deploy'
+      gs.troopsToDeploy = 3
+      gs.fogEnabled = true
+      gs.troops = [
+        { territory: 'A', count: 3, player: player1 },
+        { territory: 'B', count: 5, player: player1 },
+        { territory: 'C', count: 4, player: player2 },
+        { territory: 'D', count: 2, player: player2 },
+        { territory: 'E', count: 2, player: player2 },
+      ]
+      return gs
+    }
+
+    it('reveals the owner regardless of visibility when fog of war is disabled', () => {
+      const gs = buildChainGameState()
+      gs.fogEnabled = false
+      const mc = new MapController(gs)
+      expect(mc.getVisibleContinentOwner('South', 'red')).toBe('blue')
+    })
+
+    it('conceals a fully-owned continent when it is only partially within the viewer\'s visible range', () => {
+      const mc = new MapController(buildChainGameState())
+      // South is fully owned by blue, but D and E are outside red's visible range.
+      expect(mc.getContinentOwner('South')).toBe('blue')
+      expect(mc.getVisibleContinentOwner('South', 'red')).toBeUndefined()
+    })
+
+    it('reveals the owner when the viewer owns the entire continent themselves', () => {
+      const mc = new MapController(buildChainGameState())
+      expect(mc.getVisibleContinentOwner('North', 'red')).toBe('red')
+    })
+
+    it('reveals the owner when every territory in the continent happens to be within the viewer\'s visible range', () => {
+      const gs = buildChainGameState()
+      // Extend B's adjacency so red's border directly touches all of South.
+      gs.mapConfig.territories.B.adjacency = ['A', 'C', 'D', 'E']
+      const mc = new MapController(gs)
+      expect(mc.getVisibleContinentOwner('South', 'red')).toBe('blue')
+    })
+
+    it('stays undefined for a contested continent even when it is fully visible', () => {
+      const gs = buildChainGameState()
+      gs.troops = gs.troops.map(t =>
+        t.territory === 'C' ? { ...t, player: player1 } : t,
+      )
+      const mc = new MapController(gs)
+      expect(mc.getVisibleContinentOwner('South', 'blue')).toBeUndefined()
+    })
+  })
 })

@@ -31,8 +31,8 @@
       stroke-width: 2;
       stroke-dasharray: none;
       fill: $color;
-      stroke: darken($color, 30%);
-      filter: drop-shadow(6px 13px 2px #{darken($color, 10%)});
+      stroke: color.adjust($color, $lightness: -30%);
+      filter: drop-shadow(6px 13px 2px #{color.adjust($color, $lightness: -10%)});
     }
   }
 }
