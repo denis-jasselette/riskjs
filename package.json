@@ -35,7 +35,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/ws": "^8.18.1",
     "@vitejs/plugin-react": "^4.7.0",
-    "chromatic": "^17.5.0",
+    "chromatic": "^18.1.0",
     "eslint": "^8.57.0",
     "eslint-config-preact": "^1.4.0",
     "eslint-plugin-no-relative-import-paths": "^1.5.4",
