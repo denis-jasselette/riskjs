@@ -8,6 +8,15 @@
 
 **Input**: User description: "Core online gameplay protocol for RiskJS — real-time deploy/attack/fortify/trade-cards/end-phase actions during an online game, validated authoritatively on the server, with battle outcomes shared live to everyone in the room and each player's own state kept consistent with fog of war. Builds on the existing room/lobby/reconnection system; excludes bot decision-making, turn timers, matchmaking, and accounts (see docs/SPEC.md)."
 
+## Clarifications
+
+### Session 2026-07-25
+
+- Q: If the server process restarts or crashes while an online game is in progress, what should happen to that game? → A: Explicitly out of scope for this spec — crash/restart recovery behavior is left undefined here, to be addressed later if it becomes a problem.
+- Q: When two actions for the same seat arrive in rapid succession (e.g. a stale duplicate from a slow network), how should the server decide which one is honored? → A: Single-flight per seat — honor only the first action received for a seat while one is already being validated/applied; reject any other action for that same seat until the first one's outcome has been delivered, using the existing rejection path (FR-002/FR-003).
+- Q: What should happen if an action arrives for a seat that's already eliminated, or for a game that has already ended? → A: Reject it via the same existing rejection path as any other illegal action (FR-002/FR-003) — no new mechanism needed.
+- Q: If a player disconnects right after submitting an action but before the server finishes validating/applying it, does that in-flight action still complete? → A: Yes — once the server has received the action payload it validates and applies it exactly as if the connection were still open; the sender's connection state has no bearing on processing an already-received action.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Play a turn in an online game (Priority: P1)
@@ -153,15 +162,22 @@ defeated them and from any later whole-game end notification.
 
 ### Edge Cases
 
-- What happens when a player disconnects in the middle of submitting an action
-  (e.g. mid-attack) — does the in-flight action complete, or is it discarded?
-- How does the system handle an action submitted for a seat currently controlled
-  by an eliminated player, or for a game that has already ended?
-- What happens when two different actions for the same seat arrive in rapid
-  succession (e.g. a slow network delivering a stale duplicate) — is only the
-  first one honored?
-- How does the system handle a message that doesn't match any known action type
-  or is malformed?
+- If a player disconnects right after the server receives their action but
+  before it finishes validating/applying it, the action still completes
+  normally — the sender's connection state has no bearing on processing an
+  already-received action.
+- An action submitted for a seat currently controlled by an eliminated
+  player, or for a game that has already ended, is rejected via the same
+  path as any other illegal action (FR-002/FR-003) — no separate mechanism.
+- When two different actions for the same seat arrive in rapid succession
+  (e.g. a slow network delivering a stale duplicate), only the first one
+  received is honored — any other action for that same seat is rejected
+  (same rejection path as an illegal action) until the first one's outcome
+  has been delivered.
+- A message that doesn't match any known action type, or is malformed, is
+  rejected with a generic error delivered only to the sender; no other
+  connected player is notified and game state is unchanged — consistent with
+  the rejection path used for illegal/out-of-turn actions.
 
 ## Requirements *(mandatory)*
 
@@ -202,6 +218,11 @@ defeated them and from any later whole-game end notification.
   of and prior to any whole-game end notification — a defeated player must not
   be left unaware of their own elimination merely because the overall game
   continues for other players.
+- **FR-012**: System MUST process at most one in-flight action per seat at a
+  time: while an action for a given seat is being validated/applied, any
+  other action arriving for that same seat MUST be rejected via the same
+  path as an illegal action (FR-002/FR-003), rather than queued or allowed
+  to race the first.
 
 ### Key Entities
 
@@ -268,3 +289,6 @@ defeated them and from any later whole-game end notification.
   defeat/elimination logic owned by feature 013; this feature is only
   responsible for ensuring that signal is delivered to the affected player
   individually and promptly, not for detecting defeat itself.
+- Server process restart/crash recovery for an in-progress game (whether
+  state survives and is resumable, or the game is simply lost) is explicitly
+  out of scope for this specification.

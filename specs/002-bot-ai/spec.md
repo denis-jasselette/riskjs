@@ -8,6 +8,12 @@
 
 **Input**: User description: "Bot AI for RiskJS online games — Easy (random) and Medium (rule-based heuristic) automated opponents that fill seats and play through the same client↔server protocol as human players, plus a separate Neutral behavior that holds territory passively. Wires up the existing but unused bot-config UI stubs (bot_count, bot_behavior, bot_difficulty). Excludes Hard/Expert tiers, search/lookahead play, and the logic that decides *when* a bot takes a seat (disconnect/timeout takeover, empty-seat filling — separate features)."
 
+## Clarifications
+
+### Session 2026-07-25
+
+- Q: What should happen if an automated seat's decision logic fails to produce a legal action within its phase (unexpected game state, internal error, or exceeding its decision-time budget)? → A: Fall back to a safe default action for that phase (e.g. end phase) so the game never stalls, consistent with SC-002 and SC-005.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Fill empty seats with a playable opponent (Priority: P1)
@@ -101,16 +107,24 @@ initiates an attack while still taking its other turn actions normally.
 
 ### Edge Cases
 
-- What happens when an automated seat's only legal moves in the attack phase
-  would all be clearly unfavorable (e.g. attacking from a weak position) —
-  does it correctly choose not to attack rather than attacking anyway?
-- How does an automated seat behave when it holds a mandatory trade-in card set
-  (forced trade-in) versus an optional one?
-- What happens when a Neutral seat is also assigned a difficulty tier — does
-  the Neutral behavior correctly override attack-phase decisions regardless of
-  which tier is selected?
-- How does a Medium seat's continent-control heuristic behave when no
-  meaningful continent-completion opportunity exists at all that turn?
+- When a Medium seat's only legal attack-phase moves would all be
+  unfavorable, it initiates none of them (FR-007) and ends the phase, the
+  same as US1 AC2's "no legal beneficial action" case.
+- An automated seat trades in an available card set at its first opportunity
+  regardless of whether that set is a mandatory (forced) or optional
+  trade-in — FR-007 makes no distinction between the two; there is no
+  strategic holding of cards at any tier.
+- A Neutral seat's attack-phase suppression (FR-010) applies regardless of
+  its assigned difficulty tier — Neutral always overrides tier-driven attack
+  behavior.
+- When no meaningful continent-completion opportunity exists for a Medium
+  seat in a given turn, it simply does not pursue one that turn (FR-007's
+  "when a reasonable opportunity exists" already scopes this) — no separate
+  fallback behavior is needed.
+- If an automated seat's decision logic fails to produce a legal action
+  (error, unexpected state, or exceeding its decision-time budget), it falls
+  back to a safe default action for that phase (FR-012) rather than
+  stalling the game.
 
 ## Requirements *(mandatory)*
 
@@ -151,6 +165,11 @@ initiates an attack while still taking its other turn actions normally.
   normally.
 - **FR-011**: System MUST support a full game reaching a normal conclusion
   (win or elimination sequence) when some or all seats are automated.
+- **FR-012**: If an automated seat's decision logic fails to produce a legal
+  action for its current phase (error, unexpected state, or exceeding its
+  decision-time budget), System MUST fall back to a safe default action for
+  that phase (e.g. ending the phase) rather than stalling the game or
+  requiring external intervention.
 
 ### Key Entities
 

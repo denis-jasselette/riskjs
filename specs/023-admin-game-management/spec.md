@@ -6,7 +6,14 @@
 
 **Status**: Draft
 
-**Input**: User description: "Admin: Game Management for RiskJS — an operator-only interface to see every currently in-progress online game and manually end a specific one, as a blunt operational override for exceptional situations (stuck games, maintenance, abuse), distinct from the normal win/elimination/ranking flow (013). Ended-by-operator players are clearly told the game was ended by an operator, not that someone won. Resources are freed the same as a normally-concluded game, per 004's capacity accounting. Depends on 001 and 013 for underlying game data and normal resource-freeing behavior; does not change normal win conditions or ranking. Excludes admin lobby/account management and any broader moderation workflow."
+**Input**: User description: "Admin: Game Management for RiskJS — an operator-only interface to see every currently in-progress online game and manually end a specific one, as a blunt operational override for exceptional situations (stuck games, maintenance, abuse), distinct from the normal win/elimination/ranking flow (013). Ended-by-operator players are clearly told the game was ended by an operator, not that someone won. Resources are freed the same as a normally-concluded game, per 004's capacity accounting. Depends on 001 and 013 for underlying game data and normal resource-freeing behavior, and on 006/021 for operator authentication; does not change normal win conditions or ranking. Excludes admin lobby/account management and any broader moderation workflow."
+
+## Clarifications
+
+### Session 2026-07-25
+
+- Q: 023 depends only on 001 and 013 (not the account system, 006/021). How should "the operator" actually be authenticated/authorized to reach this interface? → A: Depends on the account system — operator access is gated by an "is_admin" flag on an authenticated account (006/021), adding a dependency on 006 not previously listed.
+- Q: Should an already-eliminated player (who already saw their own personal defeat notice) also receive the "game ended by operator" notice if they're still connected/watching when the operator ends the game? → A: Suppress it for already-eliminated players — mirrors 013's precedent for resigned players; only players still active at the moment of the operator's action receive the operator-end notice.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -73,14 +80,17 @@ normal win.
 
 ### Edge Cases
 
-- What happens if the operator attempts to end a game at the same moment it
-  concludes normally on its own (e.g. a winning move happens simultaneously)
-  — does the operator action simply have no additional effect once the game
-  has already ended?
-- How does ending a game interact with a defeated/eliminated player's
-  already-shown personal elimination notice — does an operator-ended game
-  still show correctly to a player who was already eliminated before the
-  operator intervened?
+- If the operator attempts to end a game at the same moment it concludes
+  normally on its own (e.g. a winning move happens simultaneously), the
+  operator action is a no-op once the game has already reached its normal
+  conclusion in the canonical game state — whichever conclusion (normal or
+  operator-initiated) is recorded first wins, consistent with FR-006/FR-007's
+  requirement that normal conclusions are never confused with an
+  operator-initiated end.
+- A player who was already personally eliminated before the operator
+  intervened does not receive the operator-end notice (FR-010) — they
+  already received their own personal elimination notice and the game
+  simply stops appearing in their view without a second notification.
 
 ## Requirements *(mandatory)*
 
@@ -105,6 +115,14 @@ normal win.
   last-player resignation) as or confuse it with an operator-initiated end.
 - **FR-008**: System MUST NOT make this interface reachable by any player
   who is not the operator.
+- **FR-009**: System MUST gate operator access to this interface behind an
+  authenticated account carrying an admin flag (per the account system, 006/
+  021) rather than any credential-free or account-independent mechanism.
+- **FR-010**: System MUST NOT send the operator-end notice (FR-005) to a
+  player who was already personally eliminated before the operator's action,
+  even if that player is still connected — they already received their own
+  defeat notice and must not receive a second, potentially confusing
+  end-of-game signal.
 
 ### Key Entities
 
@@ -141,6 +159,11 @@ normal win.
   displays and for how a normal conclusion frees resources; it does not
   change the normal win/elimination/ranking flow, only adds an operator
   override on top of it.
+- This feature also depends on the Account System (006) and Admin User
+  Management (021) for operator authentication/authorization — the "is_admin"
+  account flag that gates access to this interface is owned by those
+  features, not built here. This is a dependency addition made during
+  clarification; 023 cannot ship ahead of 006.
 - This tool is intended for exceptional operational situations (a stuck
   game, server maintenance, an abuse case in coordination with account-level
   action from feature 021) — it is not part of, and does not replace, any
