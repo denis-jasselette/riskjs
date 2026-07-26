@@ -58,14 +58,22 @@ export function App() {
 
   const standings = showResultsModal ? gameController.getStandings() : []
 
-  const handleStart = ({ playerCount, blizzards, fog, cardBonus, capitalMode }: HandleStartParams) => {
+  const handleStart = ({ playerCount, blizzards, fog, cardBonus, capitalMode, botCount, botBehavior, botDifficulty }: HandleStartParams) => {
     const availableColors = [...PlayerColorValues]
     shuffle(availableColors)
+    const clampedBotCount = Math.min(Math.max(botCount, 0), playerCount)
+    const firstBotIndex = playerCount - clampedBotCount
     const playerConfigs: PlayerConfig[] = []
     for (let i = 0; i < playerCount; i++) {
       const color = availableColors[i]
+      const isBot = i >= firstBotIndex
       playerConfigs.push({
-        currentUser: false, name: color, color: color, human: true, position: i + 1,
+        currentUser: false,
+        name: color,
+        color: color,
+        human: !isBot,
+        position: i + 1,
+        ...(isBot ? { botSkill: botDifficulty, botBehavior } : {}),
       })
     }
     setOnlineViewingPlayer(null)

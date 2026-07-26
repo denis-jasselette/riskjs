@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react'
 import style from '@/components/menu/GameOver.module.scss'
 import SupportButton from '@/components/menu/SupportButton'
 import { CardBonusMode } from '@/models/CardBonusMode'
+import { BotBehavior, BotSkill } from '@/models/PlayerConfig'
 
 export type HandleStartParams = {
   playerCount: number
@@ -10,6 +11,9 @@ export type HandleStartParams = {
   fog: boolean
   cardBonus: CardBonusMode
   capitalMode: boolean
+  botCount: number
+  botBehavior: BotBehavior
+  botDifficulty: BotSkill
 }
 
 export type GameOverProps = {
@@ -23,6 +27,9 @@ const GameOver = (props: GameOverProps) => {
   const blizzardsField = useRef<HTMLInputElement>(null)
   const fogField = useRef<HTMLInputElement>(null)
   const capitalModeField = useRef<HTMLInputElement>(null)
+  const botCountField = useRef<HTMLInputElement>(null)
+  const botBehaviorField = useRef<HTMLSelectElement>(null)
+  const botDifficultyField = useRef<HTMLSelectElement>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -37,6 +44,9 @@ const GameOver = (props: GameOverProps) => {
       fog: fogField.current!.checked,
       cardBonus: cardBonusField.current!.value === 'Progressive' ? 'progressive' : 'fixed',
       capitalMode: capitalModeField.current!.checked,
+      botCount: parseInt(botCountField.current!.value),
+      botBehavior: botBehaviorField.current!.value === 'Neutral' ? 'neutral' : 'automated',
+      botDifficulty: botDifficultyField.current!.value.toLowerCase() as BotSkill,
     }
     props.handleStart(params)
   }
@@ -66,18 +76,18 @@ const GameOver = (props: GameOverProps) => {
           </div>
           <div className="form-group">
             <label className="form-label" htmlFor="bot_count">Bots</label>
-            <input id="bot_count" type="number" min="0" max="4" defaultValue="0" />
+            <input ref={botCountField} id="bot_count" type="number" min="0" max="4" defaultValue="0" />
           </div>
           <div className="form-group">
             <label className="form-label" htmlFor="bot_behavior">Bot behavior</label>
-            <select id="bot_behavior">
+            <select ref={botBehaviorField} id="bot_behavior">
               <option>Automated</option>
               <option>Neutral</option>
             </select>
           </div>
           <div className="form-group">
             <label className="form-label" htmlFor="bot_difficulty">Bot difficulty</label>
-            <select id="bot_difficulty">
+            <select ref={botDifficultyField} id="bot_difficulty">
               <option>Easy</option>
               <option>Medium</option>
               <option>Hard</option>

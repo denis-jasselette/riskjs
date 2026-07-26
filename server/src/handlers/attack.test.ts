@@ -34,12 +34,16 @@ describe('attack handler', () => {
 
     const troopB = room.gameState!.troops.find(t => t.territory === 'B')!
     const troopC = room.gameState!.troops.find(t => t.territory === 'C')!
-    expect(troopB.count).toBe(5 - redEvent.payload.attackerLosses)
     if (redEvent.payload.conqueredTerritory) {
+      // On conquest, every committed troop leaves the source by default
+      // (not just the losses) -- the survivors move into the conquered
+      // territory, per GameController.attack()'s conquest branch.
+      expect(troopB.count).toBe(5 - 3)
       expect(troopC.player.color).toBe('red')
       expect(troopC.count).toBe(3 - redEvent.payload.attackerLosses)
     }
     else {
+      expect(troopB.count).toBe(5 - redEvent.payload.attackerLosses)
       expect(troopC.player.color).toBe('blue')
       expect(troopC.count).toBe(4 - redEvent.payload.defenderLosses)
     }

@@ -1,5 +1,6 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 
+import { decideAction } from '@/bots/decideAction'
 import ActionMenu from '@/components/actionMenu/ActionMenu'
 import CardHand from '@/components/actionMenu/CardHand'
 import Map from '@/components/board/Map'
@@ -54,6 +55,51 @@ const Game = () => {
     )
     if (newlyEliminated)
       setEliminationNotice({ playerName: newlyEliminated.name })
+  }, [gameState])
+
+  // Drives an automated seat's turn: whenever the current player is bot-
+  // controlled (human === false), ask decideAction for its next move and
+  // apply it through the identical gameController.<action>(...).gameState ->
+  // setGameState(...) pipeline every human-triggered handler above already
+  // uses. Depends on [gameState] (not just currentPlayer) so it re-fires
+  // after each of the bot's own actions -- deploy, then however many
+  // attacks, then fortify -- continuing to drive its turn across multiple
+  // phases until control passes to a non-bot seat or the game ends.
+  useEffect(() => {
+    if (gameState.gameOver) return
+
+    const currentPlayerConfig = gameState.playerConfigs.find(p => p.color === gameState.currentPlayer)
+    if (!currentPlayerConfig || currentPlayerConfig.human) return
+
+    const decision = decideAction(gameState, gameController.mapController, gameState.currentPlayer)
+    if (!decision) return
+
+    switch (decision.type) {
+      case 'choose_capital':
+        setGameState(gameController.chooseCapital(decision.territory).gameState)
+        return
+      case 'deploy':
+        setGameState(gameController.deploy(decision.troops, decision.territory).gameState)
+        return
+      case 'attack': {
+        const updatedController = gameController.attack(decision.attackingTroops, decision.attackingTerritory, decision.defendingTerritory)
+        setGameState(updatedController.gameState)
+        if (updatedController.lastAttackResult)
+          setAttackResult(updatedController.lastAttackResult)
+        return
+      }
+      case 'confirm_post_conquest_move':
+        setGameState(gameController.confirmPostConquestMove(decision.troopsToMove).gameState)
+        return
+      case 'fortify':
+        setGameState(gameController.fortify(decision.troops, decision.fromTerritory, decision.toTerritory).gameState)
+        return
+      case 'trade_cards':
+        setGameState(gameController.tradeCards(decision.cardIndices, decision.bonusTerritory).gameState)
+        return
+      case 'end_phase':
+        setGameState(gameController.startNextPhase().gameState)
+    }
   }, [gameState])
 
   // Default the deploy picker to "place everything remaining" whenever the

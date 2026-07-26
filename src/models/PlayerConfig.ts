@@ -2,7 +2,8 @@ export type PlayerColor = 'black' | 'white' | 'pink' | 'purple' | 'green' | 'blu
 
 export const PlayerColorValues: PlayerColor[] = ['black', 'white', 'pink', 'purple', 'green', 'blue', 'red', 'yellow', 'orange']
 
-export type BotSkill = 'easy' | 'medium' | 'hard' | 'expert' | 'neutral'
+export type BotSkill = 'easy' | 'medium' | 'hard' | 'expert'
+export type BotBehavior = 'automated' | 'neutral'
 
 export default interface PlayerConfig {
   currentUser: boolean
@@ -10,6 +11,8 @@ export default interface PlayerConfig {
   color: PlayerColor
   human: boolean
   botSkill?: BotSkill
+  /** Independent of botSkill (FR-009) -- absent/undefined on a bot seat means 'automated'. */
+  botBehavior?: BotBehavior
   position: number
 
   host?: boolean
