@@ -19,6 +19,16 @@ const PhaseEndButton = (props: PhaseEndButtonProps) => {
       </button>
     )
 
+  // A post-conquest troop-movement choice blocks every other action,
+  // including ending the phase, until it is resolved (FR-007) -- modeled
+  // directly on the forced-trade-in disabled branch below.
+  if (gameState.pendingPostConquestMove)
+    return (
+      <button disabled={true}>
+        Choose troops to move
+      </button>
+    )
+
   if (gameState.currentPhase === 'deploy') {
     if (gameState.troopsToDeploy > 0)
       return (

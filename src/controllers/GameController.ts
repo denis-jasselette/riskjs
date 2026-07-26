@@ -3,6 +3,7 @@ import { diceRoll, randInt } from '@/lib/Random'
 import Card from '@/models/Card'
 import { GamePhase } from '@/models/GamePhase'
 import GameState from '@/models/GameState'
+import { PlayerStanding } from '@/models/ResultsData'
 
 // Progressive trade-in bonus table (1-indexed trade number).
 // Trade 1: 4, 2: 6, 3: 8, 4: 10, 5: 12, 6: 15, 7+: +5 per subsequent trade.
@@ -44,6 +45,11 @@ export default class GameController {
   }
 
   isSelectable(territory: string, selectedTerritory: string | null, viewingPlayer: string): boolean {
+    // A post-conquest troop-movement choice blocks every other action until
+    // it is resolved (FR-007), regardless of phase or ownership -- checked
+    // ahead of every other branch below, including capitalDeploy's.
+    if (this.gameState.pendingPostConquestMove)
+      return false
     if (this.mapController.isTerritoryBlizzard(territory))
       return false
     if (this.gameState.currentPlayer !== viewingPlayer)
@@ -53,6 +59,8 @@ export default class GameController {
 
     const troopCount = this.getTroopCount(territory)
     const owner = this.mapController.getTerritoryOwner(territory)
+    if (this.gameState.currentPhase === 'capitalDeploy')
+      return owner === this.gameState.currentPlayer
     if (this.gameState.currentPhase === 'deploy')
       return owner === this.gameState.currentPlayer && !this.hasForcedTradeIn()
     if (this.gameState.currentPhase === 'fortify')
@@ -77,6 +85,26 @@ export default class GameController {
     if (this.gameState.troopsToDeploy <= 0 && !this.hasAvailableTradeIn())
       this.startPhase('attack')
 
+    return this
+  }
+
+  // Round-1 capital placement (Capital Mode only). Assigns `territory` as the
+  // current player's capital (write-once -- selectability is enforced by
+  // isSelectable()'s 'capitalDeploy' branch, not re-validated here, consistent
+  // with deploy()/fortify()'s existing style), grants +2 troops immediately,
+  // then advances to the next player in playerConfigs order. Once the last
+  // player has chosen, hands off into normal play via startPlayerTurn().
+  chooseCapital(territory: string): GameController {
+    console.info(`${this.gameState.currentPlayer} chose ${territory} as their capital`)
+    this.gameState.capitals[territory] = this.gameState.currentPlayer
+    this.mapController.getTroopState(territory)!.count += 2
+
+    const currentPlayerIndex = this.gameState.playerConfigs.findIndex(x => x.color === this.gameState.currentPlayer)
+    const isLastPlayer = currentPlayerIndex === this.gameState.playerConfigs.length - 1
+    if (isLastPlayer)
+      return this.startPlayerTurn(this.gameState.playerConfigs[0].color)
+
+    this.gameState.currentPlayer = this.gameState.playerConfigs[currentPlayerIndex + 1].color
     return this
   }
 
@@ -114,7 +142,8 @@ export default class GameController {
     const defendingTroops = defendingTroopState!.count
     const maxAttacker = diceCount ?? Math.min(attackingTroops, 3)
     console.info(`Attacking ${attackingTroops} against ${defendingTroops} troops from ${attackingTerritory} to ${defendingTerritory} with ${maxAttacker} dice`)
-    const result = this.attackRng(attackingTroops, defendingTroops, { rngType: 'TrueRandom', maxAttacker, maxDefender: 2 })
+    const maxDefender = this.mapController.isTerritoryCapital(defendingTerritory) ? 3 : 2
+    const result = this.attackRng(attackingTroops, defendingTroops, { rngType: 'TrueRandom', maxAttacker, maxDefender })
     this.lastAttackResult = result
     if (result.attackerLosses === attackingTroops) {
       console.info(`Attacker lost (attacker: ${-result.attackerLosses}, defender: ${-result.defenderLosses})`)
@@ -128,9 +157,76 @@ export default class GameController {
       defendingTroopState!.player = attackingTroopState!.player
       this.gameState.conqueredTerritoryThisTurn = true
 
-      if (this.hasPlayerLost(defendingPlayer))
-        this.transferCardsOnElimination(defendingPlayer)
+      // Post-conquest troop movement (024): the default above already moves
+      // every survivor in (FR-005), byte-identical to pre-feature behavior.
+      // Only when the winning roll's dice count (the mandatory minimum, FR-002)
+      // is strictly less than what's available to move (leaving 1 behind in
+      // the source is the maximum, FR-003) is there an actual choice to make
+      // -- so pendingPostConquestMove is only ever set in that case (this
+      // session's clarification: min === max skips the interactive choice
+      // entirely, and the default already applied above is that single valid
+      // value). The upper bound is intentionally not stored here -- it is
+      // always recomputable as attackingTroopState!.count +
+      // defendingTroopState!.count - 1 (see confirmPostConquestMove()).
+      const minPostConquestTroops = result.attackerDice.length
+      const maxPostConquestTroops = attackingTroopState!.count + defendingTroopState!.count - 1
+      if (minPostConquestTroops < maxPostConquestTroops) {
+        this.gameState.pendingPostConquestMove = {
+          sourceTerritory: attackingTerritory,
+          conqueredTerritory: defendingTerritory,
+          minTroopsToMove: minPostConquestTroops,
+        }
+      }
+
+      // The win condition must be (re-)checked after every capture, not only
+      // ones that happen to defeat defendingPlayer entirely -- e.g. capturing
+      // the last capital not yet owned by the attacker can win a capital-mode
+      // game even while defendingPlayer still holds other territories.
+      this.checkWinCondition()
+
+      if (this.hasPlayerLost(defendingPlayer)) {
+        this.recordKnockoutIfNeeded(defendingPlayer)
+
+        // Skip the transfer when this same conquest was simultaneously the
+        // game's winning move (FR-006) -- checkWinCondition() above already
+        // reflects that in gameState.gameOver.
+        if (!this.gameState.gameOver)
+          this.transferCardsOnElimination(defendingPlayer)
+      }
     }
+    return this
+  }
+
+  // Resolves a pending post-conquest troop-movement choice (024): moves
+  // exactly `troopsToMove` troops into the conquered territory, leaving the
+  // remainder in the source, then clears pendingPostConquestMove. No-op
+  // (with a console warning, matching tradeCards()'s existing invalid-input
+  // style) if no choice is currently pending, or if troopsToMove falls
+  // outside [minTroopsToMove, current combined troop pool - 1] -- the upper
+  // bound is always recomputed live from current territory counts rather
+  // than stored, since the two territories' combined pool is fixed once
+  // combat ends (only its split changes).
+  confirmPostConquestMove(troopsToMove: number): GameController {
+    const pending = this.gameState.pendingPostConquestMove
+    if (!pending) {
+      console.warn('Cannot confirm post-conquest move: no move is pending')
+      return this
+    }
+
+    const { sourceTerritory, conqueredTerritory, minTroopsToMove } = pending
+    const maxTroopsToMove = this.getTroopCount(sourceTerritory) + this.getTroopCount(conqueredTerritory) - 1
+    if (troopsToMove < minTroopsToMove || troopsToMove > maxTroopsToMove) {
+      console.warn(`Cannot confirm post-conquest move: ${troopsToMove} is outside the valid range [${minTroopsToMove}, ${maxTroopsToMove}]`)
+      return this
+    }
+
+    const conqueredTroopState = this.mapController.getTroopState(conqueredTerritory)
+    const sourceTroopState = this.mapController.getTroopState(sourceTerritory)
+    const delta = troopsToMove - conqueredTroopState!.count
+    conqueredTroopState!.count = troopsToMove
+    sourceTroopState!.count -= delta
+    this.gameState.pendingPostConquestMove = null
+
     return this
   }
 
@@ -171,18 +267,29 @@ export default class GameController {
     let nextPlayerIndex = currentPlayerIndex
     do {
       nextPlayerIndex = (nextPlayerIndex + 1) % this.gameState.playerConfigs.length
-    } while (this.hasPlayerLost(this.gameState.playerConfigs[nextPlayerIndex].color))
+    } while (this.hasPlayerLost(this.gameState.playerConfigs[nextPlayerIndex].color) || this.isResigned(this.gameState.playerConfigs[nextPlayerIndex].color))
     return this.gameState.playerConfigs[nextPlayerIndex].color
   }
 
   startNextPlayerTurn(): GameController {
     this.awardCardIfConquered()
-    return this.startPlayerTurn(this.getNextPlayer())
+
+    const currentPlayerIndex = this.gameState.playerConfigs.findIndex(x => x.color === this.gameState.currentPlayer)
+    let nextPlayerIndex = currentPlayerIndex
+    do {
+      nextPlayerIndex = (nextPlayerIndex + 1) % this.gameState.playerConfigs.length
+    } while (this.hasPlayerLost(this.gameState.playerConfigs[nextPlayerIndex].color) || this.isResigned(this.gameState.playerConfigs[nextPlayerIndex].color))
+
+    if (this.gameState.capitalMode && nextPlayerIndex <= currentPlayerIndex)
+      this.gameState.roundsSincePlacement += 1
+
+    return this.startPlayerTurn(this.gameState.playerConfigs[nextPlayerIndex].color)
   }
 
   startPlayerTurn(player: string): GameController {
+    this.gameState.turnCount += 1
     this.gameState.currentPlayer = player
-    this.gameState.troopsToDeploy = this.calculateReinforcement(player)
+    this.gameState.troopsToDeploy = this.calculateReinforcement(player, this.gameState.capitalMode ? this.mapController.getPlayerCapitalCount(player) : 0)
     this.gameState.conqueredTerritoryThisTurn = false
     console.info(`Starting player ${player}'s turn with ${this.gameState.troopsToDeploy} troops to deploy`)
     return this.startPhase('deploy')
@@ -378,6 +485,187 @@ export default class GameController {
 
   hasPlayerLost(player: string): boolean {
     return this.getPlayerTerritoryTotal(player) === 0
+  }
+
+  // Whether `player` currently owns every capital territory in the game.
+  // Pure query, no side effects -- not called from anywhere in this feature;
+  // exposed for the separate Win Conditions & Elimination feature to consume.
+  ownsAllCapitals(player: string): boolean {
+    const capitalTerritories = Object.keys(this.gameState.capitals)
+    return this.gameState.capitalMode
+      && capitalTerritories.length > 0
+      && capitalTerritories.every(t => this.mapController.getTerritoryOwner(t) === player)
+  }
+
+  isResigned(player: string): boolean {
+    return this.gameState.resignedPlayers.includes(player)
+  }
+
+  // Lets a player resign at any time, regardless of whose turn it currently
+  // is (FR-008). Territories/troops are left completely untouched (FR-009) --
+  // this only records the resignation, snapshots their knockout moment (used
+  // by getStandings()'s ranking), and re-checks the win condition, since a
+  // resignation alone can satisfy the conquest-mode win condition (this
+  // feature's resignation-triggers-win clarification). If the resigning
+  // player is currently mid-turn, their turn ends now (mirrors how fortify()
+  // already ends a turn) -- otherwise the current turn is left undisturbed.
+  resign(player: string): GameController {
+    if (!this.gameState.resignedPlayers.includes(player))
+      this.gameState.resignedPlayers.push(player)
+
+    this.recordKnockoutIfNeeded(player)
+    this.checkWinCondition()
+
+    // Only advance the turn if some other player is actually still eligible
+    // to take it -- guards against an infinite skip-loop in
+    // startNextPlayerTurn() for the rare case of the last remaining eligible
+    // player resigning (e.g. after the game has already been won).
+    const hasEligibleNextPlayer = this.gameState.playerConfigs
+      .some(p => p.color !== player && !this.hasPlayerLost(p.color) && !this.isResigned(p.color))
+
+    if (player === this.gameState.currentPlayer && hasEligibleNextPlayer)
+      return this.startNextPlayerTurn()
+
+    return this
+  }
+
+  // Snapshots `player`'s knockout moment (players still in, including
+  // themselves, immediately before this transition) the first time they
+  // resign or are defeated, whichever comes first. Never overwritten
+  // afterward -- a player who resigns and is later defeated keeps their
+  // resignation moment as their ranking snapshot (FR-016, US4 Acceptance
+  // Scenario 4).
+  private recordKnockoutIfNeeded(player: string): void {
+    if (player in this.gameState.knockoutOrder)
+      return
+
+    this.gameState.knockoutOrder[player] = {
+      playersRemaining: this.gameState.playerConfigs.length - Object.keys(this.gameState.knockoutOrder).length,
+      turnAtKnockout: this.gameState.turnCount,
+    }
+  }
+
+  // The conquest-mode winner, if any: the single player who owns every
+  // territory that is neither blizzard-frozen nor still held by a resigned
+  // player (FR-002). undefined if no such territory exists, or if the
+  // remaining eligible territories are still split among more than one owner.
+  private findConquestWinner(): string | undefined {
+    const eligibleOwners = Object.keys(this.gameState.mapConfig.territories)
+      .filter(t => !this.mapController.isTerritoryBlizzard(t))
+      .map(t => this.mapController.getTerritoryOwner(t))
+      .filter((owner): owner is string => owner !== undefined && !this.isResigned(owner))
+
+    if (eligibleOwners.length === 0)
+      return undefined
+
+    const candidate = eligibleOwners[0]
+    return eligibleOwners.every(owner => owner === candidate) ? candidate : undefined
+  }
+
+  // The capital-mode winner, if any: the single player who owns every
+  // capital currently in the game (FR-003), regardless of resignation or
+  // non-capital territory distribution.
+  private findCapitalWinner(): string | undefined {
+    return this.gameState.playerConfigs.find(p => this.ownsAllCapitals(p.color))?.color
+  }
+
+  // Checks whether the active win condition for the current game mode is now
+  // met, and if so, ends the game (FR-001, FR-004). No-op once gameOver is
+  // already true -- the game cannot "un-end" or switch winners.
+  private checkWinCondition(): GameController {
+    if (this.gameState.gameOver)
+      return this
+
+    if (this.getWinner() !== undefined)
+      this.gameState.gameOver = true
+
+    return this
+  }
+
+  // Public re-derivation of the current winner, if any, via the same logic
+  // checkWinCondition() uses -- independent of gameOver's own truthiness.
+  // Needed because gameOver is also used elsewhere as a pre-existing
+  // "no game currently in progress" idle/reset sentinel (e.g. GameState's
+  // constructor default, and GameLogic.defaultGameState()) that is NOT the
+  // result of an actual win; UI wiring that needs to tell "a real win just
+  // happened" apart from "no game has started yet" should check this,
+  // rather than gameOver alone.
+  //
+  // A sole remaining active (non-defeated, non-resigned) player always wins
+  // outright, regardless of game mode -- this overrides the mode-specific
+  // check below rather than supplementing it, since it's possible for the
+  // last active player to not yet technically satisfy that check (e.g. in
+  // capital mode, resignation doesn't transfer capital ownership, so the
+  // last active player might not yet "own every capital" even though no one
+  // is left to contest them). Without this, a capital-mode game can never
+  // end via resignation alone, only via an actual capital capture.
+  getWinner(): string | undefined {
+    const activePlayers = this.gameState.playerConfigs.filter(p => !this.hasPlayerLost(p.color) && !this.isResigned(p.color))
+    if (activePlayers.length === 1)
+      return activePlayers[0].color
+
+    return this.gameState.capitalMode ? this.findCapitalWinner() : this.findConquestWinner()
+  }
+
+  // The full three-tier final ranking (winner, then still-alive non-winners
+  // by troop count, then defeated/resigned by how many players remained at
+  // their knockout moment), recomputed fresh on every call -- never cached,
+  // matching calculateReinforcement()'s existing "recalculated fresh every
+  // time" style. Also used mid-game (before gameOver) to drive the personal,
+  // interim elimination view -- the winner tier is simply empty until the
+  // game actually ends.
+  getStandings(): PlayerStanding[] {
+    const winner = this.gameState.gameOver ? this.getWinner() : undefined
+
+    const standings: PlayerStanding[] = []
+
+    if (winner !== undefined) {
+      const winnerConfig = this.gameState.playerConfigs.find(p => p.color === winner)
+      if (winnerConfig) {
+        standings.push({
+          player: winnerConfig,
+          rank: 1,
+          territories: this.getPlayerTerritoryTotal(winner),
+          troops: this.getPlayerTroopTotal(winner),
+          turnsAlive: this.gameState.turnCount,
+        })
+      }
+    }
+
+    const stillAlive = this.gameState.playerConfigs
+      .filter(p => p.color !== winner && !this.hasPlayerLost(p.color) && !this.isResigned(p.color))
+      .sort((a, b) => this.getPlayerTroopTotal(b.color) - this.getPlayerTroopTotal(a.color))
+
+    for (const p of stillAlive) {
+      standings.push({
+        player: p,
+        rank: standings.length + 1,
+        territories: this.getPlayerTerritoryTotal(p.color),
+        troops: this.getPlayerTroopTotal(p.color),
+        turnsAlive: this.gameState.turnCount,
+      })
+    }
+
+    // Ranked worst-last: a player eliminated while more players were still
+    // in the game (a larger playersRemaining snapshot) ranks below a player
+    // eliminated while fewer players remained (FR-016), so ascending order
+    // puts the latest-eliminated player right after the still-alive tier and
+    // the earliest-eliminated player at the very bottom of the standings.
+    const knockedOut = this.gameState.playerConfigs
+      .filter(p => p.color in this.gameState.knockoutOrder)
+      .sort((a, b) => this.gameState.knockoutOrder[a.color].playersRemaining - this.gameState.knockoutOrder[b.color].playersRemaining)
+
+    for (const p of knockedOut) {
+      standings.push({
+        player: p,
+        rank: standings.length + 1,
+        territories: null,
+        troops: null,
+        turnsAlive: this.gameState.knockoutOrder[p.color].turnAtKnockout,
+      })
+    }
+
+    return standings
   }
 
   cycleTerritory(territory: string) {

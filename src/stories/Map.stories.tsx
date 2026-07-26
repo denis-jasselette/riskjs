@@ -55,6 +55,12 @@ function buildFixedGameState(): GameState {
     playerConfigs: PLAYERS,
     troops,
     blizzards: [],
+    capitalMode: false,
+    capitals: {},
+    roundsSincePlacement: 0,
+    resignedPlayers: [],
+    knockoutOrder: {},
+    turnCount: 0,
     fogEnabled: false,
     currentPlayer: 'white',
     currentPhase: 'deploy',
@@ -64,6 +70,7 @@ function buildFixedGameState(): GameState {
     conqueredTerritoryThisTurn: false,
     tradeCount: 0,
     cardBonusMode: 'fixed',
+    pendingPostConquestMove: null,
   }
 }
 

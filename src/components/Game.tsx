@@ -3,6 +3,7 @@ import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import ActionMenu from '@/components/actionMenu/ActionMenu'
 import CardHand from '@/components/actionMenu/CardHand'
 import Map from '@/components/board/Map'
+import CapitalCounter from '@/components/capitalCounter/CapitalCounter'
 import DiceResult, { DiceResultData } from '@/components/DiceResult'
 import EliminationBanner, { EliminationBannerData } from '@/components/EliminationBanner'
 import style from '@/components/Game.module.scss'
@@ -18,6 +19,7 @@ const Game = () => {
   const [fortifyDestination, setFortifyDestination] = useState<string | undefined>(undefined)
   const [fortifyTroopCount, setFortifyTroopCount] = useState<number>(1)
   const [deployTroopCount, setDeployTroopCount] = useState<number>(1)
+  const [postConquestTroopCount, setPostConquestTroopCount] = useState<number>(1)
   const [attackResult, setAttackResult] = useState<DiceResultData | null>(null)
   const [isZoomed, setIsZoomed] = useState(false)
   const [turnChangeNotice, setTurnChangeNotice] = useState<TurnChangeBannerData | null>(null)
@@ -61,6 +63,14 @@ const Game = () => {
     setDeployTroopCount(gameState.troopsToDeploy)
   }, [gameState.troopsToDeploy])
 
+  // Default the post-conquest troop-count picker to "move everyone"
+  // (maxPostConquestTroops) whenever a new choice becomes pending (FR-005) --
+  // the player can still reduce it before clicking Confirm.
+  useEffect(() => {
+    if (gameState.pendingPostConquestMove)
+      setPostConquestTroopCount(maxPostConquestTroops)
+  }, [gameState.pendingPostConquestMove])
+
   const maxAttackDice = selectedTerritory && gameState.currentPhase === 'attack'
     ? Math.min(gameController.getTroopCount(selectedTerritory) - 1, 3)
     : 0
@@ -70,6 +80,14 @@ const Game = () => {
     : 0
 
   const maxDeployTroops = gameState.currentPhase === 'deploy' ? gameState.troopsToDeploy : 0
+
+  // Post-conquest troop movement (024): the upper bound is never stored on
+  // gameState -- it's always recomputable as the two territories' combined
+  // post-combat troop pool minus 1 (their sum is fixed once combat ends;
+  // only its split changes as the player adjusts the choice).
+  const maxPostConquestTroops = gameState.pendingPostConquestMove
+    ? gameController.getTroopCount(gameState.pendingPostConquestMove.sourceTerritory) + gameController.getTroopCount(gameState.pendingPostConquestMove.conqueredTerritory) - 1
+    : 0
 
   const resetFortifySelection = () => {
     setFortifyDestination(undefined)
@@ -88,6 +106,11 @@ const Game = () => {
     resetFortifySelection()
   }
 
+  const handleResign = () => {
+    setEliminationNotice(null)
+    setGameState(gameController.resign(viewingPlayer).gameState)
+  }
+
   const handleAttackDiceChange = (count: number) => {
     setAttackDiceCount(count)
   }
@@ -100,6 +123,17 @@ const Game = () => {
   const handleDeployTroopCountChange = (count: number) => {
     const clamped = Math.min(Math.max(count, 1), Math.max(maxDeployTroops, 1))
     setDeployTroopCount(clamped)
+  }
+
+  const handlePostConquestTroopCountChange = (count: number) => {
+    const min = gameState.pendingPostConquestMove?.minTroopsToMove ?? 1
+    const clamped = Math.min(Math.max(count, min), Math.max(maxPostConquestTroops, min))
+    setPostConquestTroopCount(clamped)
+  }
+
+  const handlePostConquestConfirm = () => {
+    setEliminationNotice(null)
+    setGameState(gameController.confirmPostConquestMove(postConquestTroopCount).gameState)
   }
 
   const handleFortifyConfirm = () => {
@@ -116,6 +150,11 @@ const Game = () => {
     if (!gameController.isSelectable(territory, selectedTerritory ?? null, viewingPlayer))
       return
 
+    if (gameState.currentPhase === 'capitalDeploy') {
+      setEliminationNotice(null)
+      setGameState(gameController.chooseCapital(territory).gameState)
+      return
+    }
     if (gameState.currentPhase === 'deploy') {
       setEliminationNotice(null)
       const amount = Math.min(Math.max(deployTroopCount, 1), gameState.troopsToDeploy)
@@ -176,6 +215,7 @@ const Game = () => {
   return (
     <div className={style.Game} onClick={handleClickOutside}>
       <PlayerStatus />
+      <CapitalCounter />
       <CardHand />
       <ActionMenu
         handleEndPhase={handleEndPhase}
@@ -190,6 +230,10 @@ const Game = () => {
         deployTroopCount={deployTroopCount}
         maxDeployTroops={maxDeployTroops}
         onDeployTroopCountChange={handleDeployTroopCountChange}
+        postConquestTroopCount={postConquestTroopCount}
+        onPostConquestTroopCountChange={handlePostConquestTroopCountChange}
+        onPostConquestConfirm={handlePostConquestConfirm}
+        onResign={handleResign}
       />
       <Map
         class={isZoomed ? style.GameMapFullscreen : style.GameMapSafeArea}

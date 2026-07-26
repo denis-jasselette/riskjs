@@ -23,6 +23,22 @@ export class MapController {
     return this.gameState.blizzards.includes(territory)
   }
 
+  isTerritoryCapital(territory: string): boolean {
+    return territory in this.gameState.capitals
+  }
+
+  // The territory this player originally chose as their capital, or undefined
+  // if capital mode is off or they haven't chosen yet (mid-placement).
+  getPlayerCapitalTerritory(player: string): string | undefined {
+    return Object.entries(this.gameState.capitals).find(([, p]) => p === player)?.[0]
+  }
+
+  // Count of capital territories currently owned by player (own and/or
+  // captured) -- always derived fresh from live TroopState.player, never cached.
+  getPlayerCapitalCount(player: string): number {
+    return Object.keys(this.gameState.capitals).filter(t => this.getTerritoryOwner(t) === player).length
+  }
+
   getContinentTerritories(continent: string): string[] {
     return Object.entries(this.gameState.mapConfig.territories)
       .filter(([name, value]) => value.continent == continent && !this.isTerritoryBlizzard(name))

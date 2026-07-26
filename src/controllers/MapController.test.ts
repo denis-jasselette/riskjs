@@ -137,6 +137,77 @@ describe('MapController', () => {
     })
   })
 
+  describe('isTerritoryCapital()', () => {
+    it('returns false for a territory not in capitals', () => {
+      expect(mapController.isTerritoryCapital('A')).toBe(false)
+    })
+
+    it('returns true for a territory recorded in capitals', () => {
+      const gs = buildGameState()
+      gs.capitalMode = true
+      gs.capitals = { A: 'red' }
+      const mc = new MapController(gs)
+      expect(mc.isTerritoryCapital('A')).toBe(true)
+    })
+  })
+
+  describe('getPlayerCapitalTerritory()', () => {
+    it('returns undefined when capital mode is off (capitals stays empty)', () => {
+      expect(mapController.getPlayerCapitalTerritory('red')).toBeUndefined()
+    })
+
+    it('returns undefined mid-placement, before this player has chosen a capital', () => {
+      const gs = buildGameState()
+      gs.capitalMode = true
+      gs.capitals = { C: 'blue' } // blue has chosen; red has not yet
+      const mc = new MapController(gs)
+      expect(mc.getPlayerCapitalTerritory('red')).toBeUndefined()
+    })
+
+    it('returns the territory this player originally chose as their capital', () => {
+      const gs = buildGameState()
+      gs.capitalMode = true
+      gs.capitals = { A: 'red', C: 'blue' }
+      const mc = new MapController(gs)
+      expect(mc.getPlayerCapitalTerritory('red')).toBe('A')
+      expect(mc.getPlayerCapitalTerritory('blue')).toBe('C')
+    })
+
+    it('keeps returning the original territory even after it changes hands (write-once designation)', () => {
+      const gs = buildGameState()
+      gs.capitalMode = true
+      gs.capitals = { C: 'blue' }
+      gs.troops = gs.troops.map(t => (t.territory === 'C' ? { ...t, player: player1 } : t)) // red captured C
+      const mc = new MapController(gs)
+      expect(mc.getPlayerCapitalTerritory('blue')).toBe('C')
+    })
+  })
+
+  describe('getPlayerCapitalCount()', () => {
+    it('returns 0 when capital mode is off (capitals stays empty)', () => {
+      expect(mapController.getPlayerCapitalCount('red')).toBe(0)
+    })
+
+    it('counts only capitals currently owned by the player, own or captured', () => {
+      const gs = buildGameState()
+      gs.capitalMode = true
+      gs.capitals = { A: 'red', C: 'blue' }
+      const mc = new MapController(gs)
+      expect(mc.getPlayerCapitalCount('red')).toBe(1)
+      expect(mc.getPlayerCapitalCount('blue')).toBe(1)
+    })
+
+    it('reflects a captured capital immediately -- the new owner gains it, the old owner loses it', () => {
+      const gs = buildGameState()
+      gs.capitalMode = true
+      gs.capitals = { A: 'red', C: 'blue' }
+      gs.troops = gs.troops.map(t => (t.territory === 'C' ? { ...t, player: player1 } : t)) // red captured C
+      const mc = new MapController(gs)
+      expect(mc.getPlayerCapitalCount('red')).toBe(2)
+      expect(mc.getPlayerCapitalCount('blue')).toBe(0)
+    })
+  })
+
   describe('isTerritoryBlizzard()', () => {
     it('returns false for territories without blizzard', () => {
       expect(mapController.isTerritoryBlizzard('A')).toBe(false)

@@ -27,13 +27,38 @@
       justify-content: space-between;
       border-radius: 14px;
       padding: 8px 12px;
+      // The Resign button is the newest, lowest-priority item in this row --
+      // let it wrap to its own line on narrow screens rather than forcing an
+      // overflow/clip of the existing avatar/phase/end-turn controls.
+      flex-wrap: wrap;
+      row-gap: 6px;
     }
   }
 }
 
-.Avatar, .PhaseIndicator, .PhaseEndButton, .DiceSelector {
+.Avatar, .PhaseIndicator, .PhaseEndButton, .DiceSelector, .ResignButton {
   flex: 0;
   white-space: nowrap;
+}
+
+.ResignButton {
+  button {
+    opacity: .6;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  @media (max-width: 640px) {
+    order: 99;
+    flex: 1 1 100%;
+    text-align: center;
+
+    button {
+      width: 100%;
+    }
+  }
 }
 
 .DiceSelector {
@@ -98,6 +123,148 @@
   @media (max-width: 640px) {
     button {
       width: auto;
+    }
+  }
+}
+
+.CapitalPromptRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  margin-top: 8px;
+  padding: 10px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--modal-border-color);
+  background-color: var(--modal-background-color);
+  box-shadow: 0px 5px 10px 5px rgba(0, 0, 0, .7);
+
+  .CapitalPromptLabel {
+    font-size: .85em;
+  }
+
+  @media (max-width: 640px) {
+    margin-top: 6px;
+    padding: 8px 12px;
+    border-radius: 14px;
+  }
+}
+
+.PostConquestSelectorRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+
+  margin-top: 8px;
+  padding: 10px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--modal-border-color);
+  background-color: var(--modal-background-color);
+  box-shadow: 0px 5px 10px 5px rgba(0, 0, 0, .7);
+
+  .PostConquestSelectorLabel {
+    font-size: .85em;
+    opacity: .7;
+    white-space: nowrap;
+    flex: 0;
+  }
+
+  .PostConquestStepper {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .PostConquestStepBtn {
+    flex: 0 0 auto;
+    width: 1.8em;
+    padding: 2px 0;
+    text-align: center;
+
+    &:disabled {
+      opacity: .25;
+    }
+  }
+
+  .PostConquestSlider {
+    flex: 1;
+    min-width: 60px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    height: 20px;
+    margin: 0;
+    cursor: pointer;
+
+    &::-webkit-slider-runnable-track {
+      height: 4px;
+      border-radius: 2px;
+    }
+
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 12px;
+      height: 12px;
+      margin-top: -4px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid var(--primary-color);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .4);
+    }
+
+    &::-moz-range-track {
+      height: 4px;
+      border-radius: 2px;
+    }
+
+    &::-moz-range-thumb {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid var(--primary-color);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .4);
+    }
+  }
+
+  .PostConquestCount {
+    flex: 0 0 auto;
+    min-width: 2em;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .PostConquestConfirmBtn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 640px) {
+    flex-wrap: wrap;
+    margin-top: 6px;
+    padding: 8px 12px;
+    border-radius: 14px;
+
+    .PostConquestSelectorLabel {
+      order: 1;
+      flex: 1 0 auto;
+    }
+
+    .PostConquestStepper {
+      order: 2;
+      flex: 1 1 100%;
+      width: 100%;
+    }
+
+    .PostConquestConfirmBtn {
+      order: 3;
+      flex: 1 1 100%;
+      width: 100%;
     }
   }
 }

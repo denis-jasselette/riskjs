@@ -2,6 +2,7 @@ import { createServer } from 'node:http'
 
 import { WebSocketServer } from 'ws'
 
+import { ClientGameMessage } from '@/net/protocol/game'
 import { ClientMessage } from '@/net/protocol/lobby'
 
 import { handleDisconnect } from './handlers/disconnect'
@@ -28,7 +29,7 @@ wss.on('connection', (socket) => {
   const connection = new Connection(socket)
 
   socket.on('message', (raw) => {
-    let message: ClientMessage
+    let message: ClientMessage | ClientGameMessage
     try {
       message = JSON.parse(raw.toString())
     }

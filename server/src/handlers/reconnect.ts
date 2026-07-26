@@ -1,3 +1,6 @@
+import GameController from '@/controllers/GameController'
+import { filterGameStateForSeat } from '@/controllers/GameStateView'
+
 import { HandlerContext } from './context'
 
 export function handleReconnect(ctx: HandlerContext, payload: { token: string }): void {
@@ -36,9 +39,13 @@ export function handleReconnect(ctx: HandlerContext, payload: { token: string })
   })
 
   if (room.status === 'started' && room.gameState) {
+    const mapController = new GameController(room.gameState).mapController
+    const filtered = seat.color
+      ? filterGameStateForSeat(room.gameState, mapController, seat.color)
+      : room.gameState
     connection.send({
       type: 'game_started',
-      payload: { seats: room.startedSeats(), settings: room.settings, gameState: room.gameState },
+      payload: { seats: room.startedSeats(), settings: room.settings, gameState: filtered },
     })
   }
 }

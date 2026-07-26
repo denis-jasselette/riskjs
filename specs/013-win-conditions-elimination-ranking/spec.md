@@ -8,6 +8,13 @@
 
 **Input**: User description: "Win Conditions, Elimination, Resignation & Ranking for RiskJS — currently the game never actually ends: nothing sets gameOver, and the built ResultsModal is never rendered. This feature wires up conquest and capital win conditions, defeat with card transfer (skipped if it's the winning move), resignation (troops stay on board, no more turns/reinforcements, cards kept until defeated), personal game-over screens on defeat, full results+ranking on game end, and a three-tier ranking (winner, then still-alive by troops, then defeated/resigned ordered by how many players remained at their knockout moment). Depends on Capital Mode (012) for the capital win fact; interacts with the Card System feature for the forced trade-in cascade on card transfer."
 
+## Clarifications
+
+### Session 2026-07-25
+
+- Q: FR-001 only checks the win condition "after every territory capture." If the second-to-last active player resigns (leaving one sole remaining player, with no capture involved), should that also trigger the win check and end the game? → A: Yes — win-condition checking must also run whenever a player resigns, not just after captures, otherwise a game could get stuck with one player left but never declared a winner.
+- Q: FR-005 shows a personal game-over screen when a player "is defeated (loses their last territory)." Should a resigned player get that same personal defeat screen when their last territory is later conquered, even though they already left the game voluntarily? → A: No — suppress it. A resigned player already saw their own resignation confirmed; showing a fresh "you lost" screen when their last territory eventually falls would be a confusing, unnecessary second notification. The card-transfer and ranking consequences of that later conquest still apply (FR-006, FR-011) — only the personal game-over screen itself is skipped for players who resigned before their last territory was conquered.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The game actually ends when someone wins (Priority: P1)
@@ -169,10 +176,10 @@ relative order.
 
 ### Edge Cases
 
-- What happens if the very last elimination of the game (the one that reduces
-  the field to one remaining player) happens through a resignation rather
-  than a conquest — does the sole remaining player automatically win, even
-  though no capture triggered the win-condition check?
+- If the very last elimination of the game (the one that reduces the field
+  to one remaining player) happens through a resignation rather than a
+  conquest, the sole remaining player automatically wins — the win-condition
+  check runs on resignation as well as on capture, not only on capture.
 - How is "troops held at that moment" determined for the still-alive ranking
   tier if two players happen to have exactly the same troop count when the
   game ends?
@@ -180,17 +187,20 @@ relative order.
   exact same number of players remaining (e.g. simultaneous-seeming
   eliminations in quick succession) — how are they ordered relative to each
   other within that tier?
-- What happens when a resigned player's last territory is conquered — does
-  that trigger their own personal "you lost" screen the same way an active
-  player's defeat does, given they already left the game voluntarily?
+- When a resigned player's last territory is conquered, this does NOT
+  trigger their own personal "you lost" screen — they already saw their
+  resignation confirmed and a fresh defeat screen would be a confusing,
+  unnecessary second notification. The card-transfer and ranking
+  consequences of that conquest still apply as normal.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: System MUST check, after every territory capture, whether the
-  capturing player now meets the active win condition for the current game
-  mode.
+- **FR-001**: System MUST check whether the active win condition for the
+  current game mode is now met after every territory capture, and MUST also
+  perform this check after every resignation (in case the resignation
+  itself leaves a single remaining player as the winner).
 - **FR-002**: In a game without capital mode active, the win condition MUST
   be owning every territory that is neither blizzard-frozen nor still held by
   a resigned player.
@@ -201,7 +211,10 @@ relative order.
   met, without requiring any further action.
 - **FR-005**: System MUST detect when a player is defeated (loses their last
   territory) and immediately show that player a personal game-over screen,
-  independent of whether the overall game continues.
+  independent of whether the overall game continues — except when that
+  player had already resigned prior to losing their last territory, in
+  which case no personal game-over screen is shown (they already saw their
+  resignation confirmed).
 - **FR-006**: System MUST transfer all cards from a defeated player's hand to
   the player who conquered their last territory, unless that conquest is
   simultaneously the game's winning move, in which case no transfer occurs.

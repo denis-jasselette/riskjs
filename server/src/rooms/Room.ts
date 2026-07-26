@@ -1,8 +1,9 @@
+import { Connection } from '@server/ws/Connection'
+
 import GameState from '@/models/GameState'
 import { PlayerColor } from '@/models/PlayerConfig'
+import { ServerGameMessage } from '@/net/protocol/game'
 import { RoomSettings, Seat, ServerMessage, StartedSeat } from '@/net/protocol/lobby'
-
-import { Connection } from '@server/ws/Connection'
 
 export type RoomStatus = 'lobby' | 'started'
 
@@ -10,6 +11,7 @@ export type RoomSeat = Seat & {
   token: string | null
   connection: Connection | null
   color: PlayerColor | null
+  actionInFlight: boolean
 }
 
 export class Room {
@@ -32,7 +34,7 @@ export class Room {
   private buildSeats(seatCount: number): RoomSeat[] {
     const seats: RoomSeat[] = []
     for (let i = 0; i < seatCount; i++) {
-      seats.push({ index: i, nickname: null, connected: false, isHost: false, token: null, connection: null, color: null })
+      seats.push({ index: i, nickname: null, connected: false, isHost: false, token: null, connection: null, color: null, actionInFlight: false })
     }
     return seats
   }
@@ -64,9 +66,10 @@ export class Room {
     seat.token = null
     seat.connection = null
     seat.color = null
+    seat.actionInFlight = false
   }
 
-  broadcast(message: ServerMessage): void {
+  broadcast(message: ServerMessage | ServerGameMessage): void {
     for (const seat of this.seats) {
       seat.connection?.send(message)
     }
@@ -86,7 +89,7 @@ export class Room {
     }
     if (seatCount > this.seats.length) {
       for (let i = this.seats.length; i < seatCount; i++) {
-        this.seats.push({ index: i, nickname: null, connected: false, isHost: false, token: null, connection: null, color: null })
+        this.seats.push({ index: i, nickname: null, connected: false, isHost: false, token: null, connection: null, color: null, actionInFlight: false })
       }
     }
     else if (seatCount < this.seats.length) {

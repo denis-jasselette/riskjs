@@ -13,6 +13,18 @@ export default class GameState {
   blizzards: string[]
   currentPlayer: string
   currentPhase: GamePhase
+  /** Whether Capital Mode is enabled for this game. Set once at game creation, never changes. */
+  capitalMode: boolean
+  /** Capital assignments: territory name -> color of the player who chose it as their capital. Write-once per territory; stays empty when capitalMode is false. */
+  capitals: Record<string, string>
+  /** Full turn cycles completed since the capital-placement round, incremented by GameController.startNextPlayerTurn(). Meaningful only when capitalMode is true; never decremented. */
+  roundsSincePlacement: number
+  /** Player colors who have resigned. Append-only for the life of a game; territories/troops are untouched by resignation itself. */
+  resignedPlayers: string[]
+  /** Player color -> knockout snapshot, written exactly once per player (first of resignation or defeat, whichever comes first). Absent entries mean "never defeated or resigned" (still active, or the eventual winner). */
+  knockoutOrder: Record<string, { playersRemaining: number, turnAtKnockout: number }>
+  /** Individual player-turns elapsed so far, incremented once per GameController.startPlayerTurn() call, in every game mode. */
+  turnCount: number
 
   /* TODO */
   portals?: string[]
@@ -29,6 +41,18 @@ export default class GameState {
   tradeCount: number
   /** Fixed vs progressive bonus-troop table for card trade-ins. */
   cardBonusMode: CardBonusMode
+  /**
+   * The attacking player's not-yet-resolved choice of how many troops to move
+   * into a just-conquered territory, or null when no such choice is pending.
+   * Set by GameController.attack()'s conquest branch only when there's an
+   * actual choice to make (the winning roll's dice count is strictly less
+   * than the troops available to move); cleared by
+   * GameController.confirmPostConquestMove(). While non-null, blocks all
+   * other action (see isSelectable()/PhaseEndButton). minTroopsToMove is the
+   * only bound stored here -- the upper bound is always recomputed live from
+   * current territory counts, never persisted.
+   */
+  pendingPostConquestMove: { sourceTerritory: string, conqueredTerritory: string, minTroopsToMove: number } | null
 
   constructor() {
     this.gameOver = true
@@ -38,6 +62,12 @@ export default class GameState {
     this.blizzards = []
     this.currentPlayer = ''
     this.currentPhase = 'deploy'
+    this.capitalMode = false
+    this.capitals = {}
+    this.roundsSincePlacement = 0
+    this.resignedPlayers = []
+    this.knockoutOrder = {}
+    this.turnCount = 0
     this.fogEnabled = false
     this.troopsToDeploy = 0
     this.deck = []
@@ -45,5 +75,6 @@ export default class GameState {
     this.conqueredTerritoryThisTurn = false
     this.tradeCount = 0
     this.cardBonusMode = 'fixed'
+    this.pendingPostConquestMove = null
   }
 }

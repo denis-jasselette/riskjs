@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import GameController from '@/controllers/GameController'
+import GameLogic from '@/controllers/GameLogic'
 import Card from '@/models/Card'
 import { CardType } from '@/models/CardType'
 import GameState from '@/models/GameState'
@@ -52,6 +53,22 @@ const player2: PlayerConfig = {
   color: 'blue',
   human: false,
   position: 1,
+}
+
+const player3: PlayerConfig = {
+  currentUser: false,
+  name: 'Player 3',
+  color: 'green',
+  human: false,
+  position: 2,
+}
+
+const player4: PlayerConfig = {
+  currentUser: false,
+  name: 'Player 4',
+  color: 'purple',
+  human: false,
+  position: 3,
 }
 
 // Map for calculateReinforcement() tests: two continents, deliberately shaped
@@ -128,6 +145,30 @@ function buildGameState(): GameState {
   gs.conqueredTerritoryThisTurn = false
   gs.tradeCount = 0
   gs.cardBonusMode = 'fixed'
+  return gs
+}
+
+// Same minimal A/B/C/D map, but with a third player ("green", position 1,
+// seated between red and blue) who owns zero territories -- i.e. already
+// eliminated -- so getNextPlayer()/startNextPlayerTurn()'s skip-loop has
+// someone to skip over mid-cycle. Territory ownership (red: A/B, blue: C/D)
+// is unchanged from buildGameState().
+function buildThreePlayerGameStateWithEliminatedMiddle(): GameState {
+  const gs = buildGameState()
+  gs.playerConfigs = [player1, player3, player2]
+  gs.capitalMode = true
+  return gs
+}
+
+// Builds a capitalDeploy-phase GameState from the same minimal A/B/C/D map
+// used by buildGameState(), for testing round-1 capital placement in
+// isolation from normal deploy-phase state.
+function buildCapitalDeployGameState(): GameState {
+  const gs = buildGameState()
+  gs.capitalMode = true
+  gs.capitals = {}
+  gs.currentPhase = 'capitalDeploy'
+  gs.troopsToDeploy = 0
   return gs
 }
 
@@ -219,6 +260,311 @@ describe('GameController', () => {
       // C loses 2: 4 - 2 = 2
       expect(controller.getTroopCount('C')).toBe(2)
     })
+
+    describe('capital extra defending die', () => {
+      it('passes maxDefender: 3 when the defending territory has enough troops for the bonus die', () => {
+        controller.gameState.capitalMode = true
+        controller.gameState.capitals = { C: 'blue' }
+        const spy = vi.spyOn(controller, 'attackRng')
+
+        controller.attack(3, 'B', 'C')
+
+        expect(spy).toHaveBeenCalledWith(3, 4, expect.objectContaining({ maxDefender: 3 }))
+      })
+
+      it('still caps at 1 rolled die when the capital territory only has 1 troop', () => {
+        controller.gameState.capitalMode = true
+        controller.gameState.capitals = { C: 'blue' }
+        controller.mapController.getTroopState('C')!.count = 1
+
+        controller.attack(1, 'B', 'C')
+
+        // maxDefender passed is 3 (capital bonus), but attackRng's existing
+        // Math.min(maxDefender, defendingTroops) caps the actual roll at 1.
+        expect(controller.lastAttackResult!.defenderDice.length).toBe(1)
+      })
+
+      it('does not grant the extra die to a non-capital territory', () => {
+        controller.gameState.capitalMode = true
+        controller.gameState.capitals = {} // C is not a capital
+        const spy = vi.spyOn(controller, 'attackRng')
+
+        controller.attack(3, 'B', 'C')
+
+        expect(spy).toHaveBeenCalledWith(3, 4, expect.objectContaining({ maxDefender: 2 }))
+      })
+
+      it('does not grant the extra die in a non-capital-mode game, where capitals stays empty', () => {
+        controller.gameState.capitalMode = false
+        controller.gameState.capitals = {}
+        const spy = vi.spyOn(controller, 'attackRng')
+
+        controller.attack(3, 'B', 'C')
+
+        expect(spy).toHaveBeenCalledWith(3, 4, expect.objectContaining({ maxDefender: 2 }))
+      })
+    })
+
+    describe('post-conquest troop movement (024) — pending-state setup', () => {
+      it('sets pendingPostConquestMove when survivors exceed the winning roll\'s dice count, and still applies the default (max) transfer', () => {
+        // Winning roll used 2 dice, attacker sends 3 troops and loses 0 -- 3
+        // survivors move by default, but only 2 dice were decisive, so
+        // min (2) < max (3 + 4 - 1 = 6): a real choice exists.
+        vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [6, 5], defenderDice: [] })
+
+        controller.attack(3, 'B', 'C')
+
+        expect(controller.gameState.pendingPostConquestMove).toEqual({
+          sourceTerritory: 'B',
+          conqueredTerritory: 'C',
+          minTroopsToMove: 2,
+        })
+        // Default transfer is unchanged: all 3 attacking troops moved in.
+        expect(controller.getTroopCount('B')).toBe(2)
+        expect(controller.getTroopCount('C')).toBe(3)
+      })
+
+      it('leaves pendingPostConquestMove null when the winning roll\'s dice count equals the maximum (no real choice)', () => {
+        // B starts with 5 troops; attacking with all 4 sendable troops (1
+        // left behind is irrelevant here -- attackingTroops is a param, not
+        // constrained by what's left behind) and 0 attacker losses:
+        // post-combat B = 5 - 4 = 1, C = 4 - 0 = 4, so max = 1 + 4 - 1 = 4.
+        // A 4-dice winning roll makes min equal that same 4 -- no real choice.
+        vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [6, 6, 6, 6], defenderDice: [] })
+
+        controller.attack(4, 'B', 'C')
+
+        expect(controller.getTroopCount('B')).toBe(1)
+        expect(controller.getTroopCount('C')).toBe(4)
+        expect(controller.gameState.pendingPostConquestMove).toBeNull()
+      })
+
+      it('does not set pendingPostConquestMove when the attack fails (no conquest)', () => {
+        vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 3, defenderLosses: 0, attackerDice: [1], defenderDice: [] })
+
+        controller.attack(3, 'B', 'C')
+
+        expect(controller.gameState.pendingPostConquestMove).toBeNull()
+      })
+
+      it('records the correct minTroopsToMove for a range of different winning-roll dice counts (1, 2, 3)', () => {
+        for (const diceCount of [1, 2, 3]) {
+          const gs = buildGameState()
+          const localController = new GameController(gs)
+          vi.spyOn(localController, 'attackRng').mockReturnValue({
+            attackerLosses: 0,
+            defenderLosses: 4,
+            attackerDice: Array.from({ length: diceCount }, () => 6),
+            defenderDice: [],
+          })
+
+          localController.attack(5, 'B', 'C')
+
+          expect(localController.gameState.pendingPostConquestMove?.minTroopsToMove).toBe(diceCount)
+        }
+      })
+
+      it('records the correct maximum (leaving 1 behind in the source) for a range of different survivor counts', () => {
+        // Sending every troop in B (attackingTroops === B's full count) with
+        // 0 attacker losses leaves B at 0 and moves the entire pool into C --
+        // so B's starting size directly controls the post-combat survivor
+        // count: max = sourceCount - 1 in each case.
+        for (const sourceCount of [3, 6, 10]) {
+          const gs = buildGameState()
+          gs.troops.find(t => t.territory === 'B')!.count = sourceCount
+          const localController = new GameController(gs)
+          vi.spyOn(localController, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [6], defenderDice: [] })
+
+          localController.attack(sourceCount, 'B', 'C')
+
+          const max = localController.getTroopCount('B') + localController.getTroopCount('C') - 1
+          expect(max).toBe(sourceCount - 1)
+          expect(localController.gameState.pendingPostConquestMove?.minTroopsToMove).toBe(1)
+        }
+      })
+    })
+  })
+
+  // --------------------------------------------------------
+  describe('post-conquest troop movement (024) — bounds correctness (US2)', () => {
+    it('the offered minimum always exactly equals the winning roll\'s dice count, for 1, 2, and 3 dice', () => {
+      for (const diceCount of [1, 2, 3]) {
+        const gs = buildGameState()
+        const localController = new GameController(gs)
+        vi.spyOn(localController, 'attackRng').mockReturnValue({
+          attackerLosses: 0,
+          defenderLosses: 4,
+          attackerDice: Array.from({ length: diceCount }, () => 6),
+          defenderDice: [],
+        })
+
+        localController.attack(5, 'B', 'C')
+
+        expect(localController.gameState.pendingPostConquestMove?.minTroopsToMove).toBe(diceCount)
+      }
+    })
+
+    it('the offered maximum always exactly equals troops remaining in the source immediately after combat, minus 1', () => {
+      // Sending every troop in B leaves B at 0 and puts the whole pool in C,
+      // so B's starting size directly controls the survivor count.
+      for (const sourceCount of [3, 6, 10]) {
+        const gs = buildGameState()
+        gs.troops.find(t => t.territory === 'B')!.count = sourceCount
+        const localController = new GameController(gs)
+        vi.spyOn(localController, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [6], defenderDice: [] })
+
+        localController.attack(sourceCount, 'B', 'C')
+
+        const max = localController.getTroopCount('B') + localController.getTroopCount('C') - 1
+        expect(max).toBe(sourceCount - 1)
+      }
+    })
+
+    it('confirmPostConquestMove() rejects a value one below the minimum, leaving troop counts unchanged', () => {
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [6, 5], defenderDice: [] })
+      controller.attack(3, 'B', 'C') // min = 2, max = 2 + 3 - 1 = 4
+      const bBefore = controller.getTroopCount('B')
+      const cBefore = controller.getTroopCount('C')
+
+      controller.confirmPostConquestMove(1) // one below min (2)
+
+      expect(controller.getTroopCount('B')).toBe(bBefore)
+      expect(controller.getTroopCount('C')).toBe(cBefore)
+      expect(controller.gameState.pendingPostConquestMove).not.toBeNull()
+    })
+
+    it('confirmPostConquestMove() rejects a value one above the maximum, leaving troop counts unchanged', () => {
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [6, 5], defenderDice: [] })
+      controller.attack(3, 'B', 'C') // min = 2, max = 2 + 3 - 1 = 4
+      const bBefore = controller.getTroopCount('B')
+      const cBefore = controller.getTroopCount('C')
+
+      controller.confirmPostConquestMove(5) // one above max (4)
+
+      expect(controller.getTroopCount('B')).toBe(bBefore)
+      expect(controller.getTroopCount('C')).toBe(cBefore)
+      expect(controller.gameState.pendingPostConquestMove).not.toBeNull()
+    })
+  })
+
+  // --------------------------------------------------------
+  describe('confirmPostConquestMove()', () => {
+    beforeEach(() => {
+      // Set up a qualifying conquest: B (5 troops) attacks C (4 troops) with
+      // a 1-dice winning roll and 0 attacker losses -- 5 survivors available
+      // to move, min = 1, max = 0 + 5 - 1 = 4, a real choice exists.
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [6], defenderDice: [] })
+      controller.attack(5, 'B', 'C')
+    })
+
+    it('has a pending choice with the expected bounds before confirming', () => {
+      expect(controller.gameState.pendingPostConquestMove).toEqual({
+        sourceTerritory: 'B',
+        conqueredTerritory: 'C',
+        minTroopsToMove: 1,
+      })
+      expect(controller.getTroopCount('B')).toBe(0)
+      expect(controller.getTroopCount('C')).toBe(5)
+    })
+
+    it('moves exactly the chosen amount in and leaves the correct remainder in the source', () => {
+      controller.confirmPostConquestMove(3)
+
+      expect(controller.getTroopCount('C')).toBe(3)
+      expect(controller.getTroopCount('B')).toBe(2)
+      expect(controller.gameState.pendingPostConquestMove).toBeNull()
+    })
+
+    it('accepts the minimum bound', () => {
+      controller.confirmPostConquestMove(1)
+
+      expect(controller.getTroopCount('C')).toBe(1)
+      expect(controller.getTroopCount('B')).toBe(4)
+    })
+
+    it('accepts the maximum bound', () => {
+      controller.confirmPostConquestMove(4)
+
+      expect(controller.getTroopCount('C')).toBe(4)
+      expect(controller.getTroopCount('B')).toBe(1)
+    })
+
+    it('rejects a value one below the minimum, leaving troop counts and pending state unchanged', () => {
+      controller.confirmPostConquestMove(0)
+
+      expect(controller.getTroopCount('C')).toBe(5)
+      expect(controller.getTroopCount('B')).toBe(0)
+      expect(controller.gameState.pendingPostConquestMove).not.toBeNull()
+    })
+
+    it('rejects a value one above the maximum, leaving troop counts and pending state unchanged', () => {
+      controller.confirmPostConquestMove(5)
+
+      expect(controller.getTroopCount('C')).toBe(5)
+      expect(controller.getTroopCount('B')).toBe(0)
+      expect(controller.gameState.pendingPostConquestMove).not.toBeNull()
+    })
+
+    it('is a no-op when called with no pending state', () => {
+      controller.confirmPostConquestMove(3) // resolves the pending choice
+      const cBefore = controller.getTroopCount('C')
+      const bBefore = controller.getTroopCount('B')
+
+      controller.confirmPostConquestMove(2) // no pending state left -- no-op
+
+      expect(controller.getTroopCount('C')).toBe(cBefore)
+      expect(controller.getTroopCount('B')).toBe(bBefore)
+    })
+  })
+
+  // --------------------------------------------------------
+  describe('isSelectable() post-conquest pending-move gate (024)', () => {
+    it('returns false for every territory while a post-conquest move is pending, regardless of phase or ownership', () => {
+      controller.gameState.pendingPostConquestMove = { sourceTerritory: 'B', conqueredTerritory: 'C', minTroopsToMove: 1 }
+
+      controller.gameState.currentPhase = 'attack'
+      expect(controller.isSelectable('A', null, 'red')).toBe(false) // own territory
+      expect(controller.isSelectable('C', null, 'red')).toBe(false) // enemy territory
+      expect(controller.isSelectable('B', 'B', 'red')).toBe(false) // already-selected territory
+
+      controller.gameState.currentPhase = 'fortify'
+      expect(controller.isSelectable('A', null, 'red')).toBe(false)
+
+      controller.gameState.currentPhase = 'deploy'
+      expect(controller.isSelectable('A', null, 'red')).toBe(false)
+    })
+
+    it('takes priority over the capitalDeploy branch too', () => {
+      controller.gameState.capitalMode = true
+      controller.gameState.currentPhase = 'capitalDeploy'
+      controller.gameState.pendingPostConquestMove = { sourceTerritory: 'B', conqueredTerritory: 'C', minTroopsToMove: 1 }
+
+      expect(controller.isSelectable('A', null, 'red')).toBe(false)
+    })
+
+    it('returns to normal behavior once pendingPostConquestMove is cleared', () => {
+      controller.gameState.pendingPostConquestMove = { sourceTerritory: 'B', conqueredTerritory: 'C', minTroopsToMove: 1 }
+      expect(controller.isSelectable('A', null, 'red')).toBe(false)
+
+      controller.gameState.pendingPostConquestMove = null
+      expect(controller.isSelectable('A', null, 'red')).toBe(true)
+    })
+  })
+
+  // --------------------------------------------------------
+  describe('post-conquest troop movement (024) — fortify independence (FR-008)', () => {
+    it('fortify() behaves identically regardless of any earlier post-conquest choice made this turn', () => {
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [6], defenderDice: [] })
+      controller.attack(5, 'B', 'C')
+      controller.confirmPostConquestMove(3) // B: 2, C: 3
+
+      controller.fortify(1, 'A', 'B')
+
+      // Fortify's own mechanics (transfer + turn advance) are unaffected.
+      expect(controller.getTroopCount('A')).toBe(2)
+      expect(controller.getTroopCount('B')).toBe(3)
+      expect(controller.gameState.currentPlayer).toBe('blue')
+    })
   })
 
   // --------------------------------------------------------
@@ -306,6 +652,51 @@ describe('GameController', () => {
     it('wraps around and returns player1 when player2 is current', () => {
       controller.gameState.currentPlayer = 'blue'
       expect(controller.getNextPlayer()).toBe('red')
+    })
+  })
+
+  // --------------------------------------------------------
+  describe('roundsSincePlacement', () => {
+    it('does not increment when advancing to the next player mid-cycle (capital mode on)', () => {
+      controller.gameState.capitalMode = true
+      controller.startNextPlayerTurn() // red -> blue: not a wrap
+      expect(controller.gameState.roundsSincePlacement).toBe(0)
+    })
+
+    it('increments exactly once per full cycle through playerConfigs when capital mode is on', () => {
+      controller.gameState.capitalMode = true
+      controller.startNextPlayerTurn() // red -> blue
+      controller.startNextPlayerTurn() // blue -> red: wraps, completes one full cycle
+      expect(controller.gameState.roundsSincePlacement).toBe(1)
+
+      controller.startNextPlayerTurn() // red -> blue
+      controller.startNextPlayerTurn() // blue -> red: wraps again
+      expect(controller.gameState.roundsSincePlacement).toBe(2)
+    })
+
+    it('never increments when capital mode is off, regardless of how many full cycles complete', () => {
+      controller.gameState.capitalMode = false
+      controller.startNextPlayerTurn() // red -> blue
+      controller.startNextPlayerTurn() // blue -> red: would wrap if capital mode were on
+      controller.startNextPlayerTurn() // red -> blue
+      controller.startNextPlayerTurn() // blue -> red
+
+      expect(controller.gameState.roundsSincePlacement).toBe(0)
+    })
+
+    it('advances correctly around an eliminated player seated mid-cycle', () => {
+      // Seating order is red, green (eliminated), blue. green owns zero
+      // territories, so the skip-loop in startNextPlayerTurn() must pass over
+      // them without counting a spurious wrap.
+      const threePlayerController = new GameController(buildThreePlayerGameStateWithEliminatedMiddle())
+
+      threePlayerController.startNextPlayerTurn() // red -> (skip green) -> blue: not a wrap
+      expect(threePlayerController.gameState.currentPlayer).toBe('blue')
+      expect(threePlayerController.gameState.roundsSincePlacement).toBe(0)
+
+      threePlayerController.startNextPlayerTurn() // blue -> (skip green) -> red: wraps, one full cycle
+      expect(threePlayerController.gameState.currentPlayer).toBe('red')
+      expect(threePlayerController.gameState.roundsSincePlacement).toBe(1)
     })
   })
 
@@ -416,6 +807,19 @@ describe('GameController', () => {
 
   // --------------------------------------------------------
   describe('card transfer on elimination', () => {
+    beforeEach(() => {
+      // A 3rd player (green, holding a territory the wipeout below never
+      // touches) so that fully eliminating blue does NOT also end the game --
+      // keeping these as genuine "non-winning defeat" cases now that a
+      // winning-move elimination skips the transfer entirely (013, FR-006).
+      const gs = buildGameState()
+      gs.mapConfig.territories.E = { coords: { x: 3, y: 0 }, continent: 'South', path: '', adjacency: [] }
+      gs.playerConfigs = [player1, player2, player3]
+      gs.troops.push({ territory: 'E', count: 1, player: player3 })
+      gs.playerCards.green = []
+      controller = new GameController(gs)
+    })
+
     const wipeOutBlue = () => {
       vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [], defenderDice: [] })
       controller.attack(3, 'B', 'C')
@@ -575,6 +979,91 @@ describe('GameController', () => {
     it('blocks deploying while a forced trade-in is pending', () => {
       controller.gameState.playerCards.red = [card('infantry'), card('infantry'), card('infantry'), card('cavalry'), card('cavalry')]
       expect(controller.isSelectable('A', null, 'red')).toBe(false)
+    })
+  })
+
+  // --------------------------------------------------------
+  describe('capital mode — foundational', () => {
+    it('initState() with capitalModeEnabled: true enters capitalDeploy phase without starting the first player\'s turn', () => {
+      const mapConfig = buildMinimalMapConfig()
+      const state = GameLogic.initState(mapConfig, [player1, player2], false, false, false, 'fixed', true)
+
+      expect(state.capitalMode).toBe(true)
+      expect(state.capitals).toEqual({})
+      expect(state.currentPhase).toBe('capitalDeploy')
+      expect(state.currentPlayer).toBe(player1.color)
+      // startPlayerTurn (which sets troopsToDeploy via calculateReinforcement) has not run yet.
+      expect(state.troopsToDeploy).toBe(0)
+    })
+
+    it('initState() with capitalModeEnabled: false (default) is unaffected — normal deploy phase begins immediately', () => {
+      const mapConfig = buildMinimalMapConfig()
+      const state = GameLogic.initState(mapConfig, [player1, player2], false, false, false, 'fixed', false)
+
+      expect(state.capitalMode).toBe(false)
+      expect(state.capitals).toEqual({})
+      expect(state.currentPhase).toBe('deploy')
+      expect(state.troopsToDeploy).toBeGreaterThan(0)
+    })
+
+    describe('isSelectable() during capitalDeploy phase', () => {
+      let capitalController: GameController
+
+      beforeEach(() => {
+        capitalController = new GameController(buildCapitalDeployGameState())
+      })
+
+      it('returns true for the current player\'s own territory', () => {
+        expect(capitalController.isSelectable('A', null, 'red')).toBe(true)
+        expect(capitalController.isSelectable('B', null, 'red')).toBe(true)
+      })
+
+      it('returns false for another player\'s territory', () => {
+        expect(capitalController.isSelectable('C', null, 'red')).toBe(false)
+        expect(capitalController.isSelectable('D', null, 'red')).toBe(false)
+      })
+    })
+  })
+
+  // --------------------------------------------------------
+  describe('chooseCapital()', () => {
+    let capitalController: GameController
+
+    beforeEach(() => {
+      capitalController = new GameController(buildCapitalDeployGameState())
+    })
+
+    it('adds 2 troops to the chosen territory immediately', () => {
+      const before = capitalController.getTroopCount('A')
+      capitalController.chooseCapital('A')
+      expect(capitalController.getTroopCount('A')).toBe(before + 2)
+    })
+
+    it('records the chosen territory as that player\'s capital', () => {
+      capitalController.chooseCapital('A')
+      expect(capitalController.gameState.capitals.A).toBe('red')
+    })
+
+    it('advances to the next player in playerConfigs order after a non-final choice', () => {
+      capitalController.chooseCapital('A')
+      expect(capitalController.gameState.currentPlayer).toBe('blue')
+      expect(capitalController.gameState.currentPhase).toBe('capitalDeploy')
+    })
+
+    it('starts normal play once the last player in playerConfigs order has chosen', () => {
+      capitalController.chooseCapital('A') // red -> advances to blue
+      capitalController.chooseCapital('C') // blue is last -> starts normal play
+
+      expect(capitalController.gameState.currentPhase).toBe('deploy')
+      expect(capitalController.gameState.currentPlayer).toBe(player1.color)
+      expect(capitalController.gameState.troopsToDeploy).toBeGreaterThan(0)
+    })
+
+    it('leaves both players\' capital designations intact once placement completes', () => {
+      capitalController.chooseCapital('A')
+      capitalController.chooseCapital('C')
+
+      expect(capitalController.gameState.capitals).toEqual({ A: 'red', C: 'blue' })
     })
   })
 
@@ -830,6 +1319,462 @@ describe('GameController', () => {
         // territory: floor(12/3) = 4; continent: Alpha(0) + Beta(7) = 7; capital: 2 * 2 = 4
         expect(reinforcementController.calculateReinforcement('red', 2)).toBe(4 + 7 + 4)
       })
+    })
+
+    describe('capitalsOwned wiring via startPlayerTurn()', () => {
+      it('passes the player\'s real, current capital count to calculateReinforcement when capital mode is active', () => {
+        // GameController's constructor shallow-copies gameState, so these
+        // must be set on the controller's own copy (reassigning gs.capitalMode
+        // / gs.capitals after construction would not be visible to it).
+        reinforcementController.gameState.capitalMode = true
+        reinforcementController.gameState.capitals = { A1: 'red', A2: 'red' }
+        ownTerritories(gs, player1, ['A1', 'A2'])
+
+        reinforcementController.startPlayerTurn('red')
+
+        // territory: max(3, floor(2/3)) = 3; capital: 2 owned * 2 = 4
+        expect(reinforcementController.gameState.troopsToDeploy).toBe(3 + 4)
+        expect(reinforcementController.gameState.troopsToDeploy).toBe(reinforcementController.calculateReinforcement('red', 2))
+      })
+
+      it('reflects a captured capital immediately -- the new owner gets the bonus, the old owner loses it', () => {
+        reinforcementController.gameState.capitalMode = true
+        reinforcementController.gameState.capitals = { A1: 'blue' } // originally blue's capital
+        ownTerritories(gs, player1, ['A1']) // but red currently occupies it (captured)
+        ownTerritories(gs, player2, ['B1'])
+
+        reinforcementController.startPlayerTurn('red')
+        expect(reinforcementController.gameState.troopsToDeploy).toBe(reinforcementController.calculateReinforcement('red', 1))
+
+        reinforcementController.startPlayerTurn('blue')
+        expect(reinforcementController.gameState.troopsToDeploy).toBe(reinforcementController.calculateReinforcement('blue', 0))
+      })
+
+      it('always passes 0 in a non-capital-mode game, even if capitals somehow contains an entry', () => {
+        reinforcementController.gameState.capitalMode = false
+        reinforcementController.gameState.capitals = { A1: 'red' }
+        ownTerritories(gs, player1, ['A1'])
+
+        reinforcementController.startPlayerTurn('red')
+
+        expect(reinforcementController.gameState.troopsToDeploy).toBe(reinforcementController.calculateReinforcement('red'))
+        expect(reinforcementController.gameState.troopsToDeploy).toBe(3)
+      })
+    })
+  })
+
+  // --------------------------------------------------------
+  describe('ownsAllCapitals()', () => {
+    beforeEach(() => {
+      controller.gameState.capitalMode = true
+      // A is red's capital, C is blue's capital (both starting-owner territories).
+      controller.gameState.capitals = { A: 'red', C: 'blue' }
+    })
+
+    it('returns false before any capital has changed hands (each player only owns their own)', () => {
+      expect(controller.ownsAllCapitals('red')).toBe(false)
+      expect(controller.ownsAllCapitals('blue')).toBe(false)
+    })
+
+    it('returns true only once a single player owns every capital territory', () => {
+      controller.mapController.getTroopState('C')!.player = player1 // red captures blue's capital
+
+      expect(controller.ownsAllCapitals('red')).toBe(true)
+      expect(controller.ownsAllCapitals('blue')).toBe(false)
+    })
+
+    it('returns false for an "owns all but one" case with more than two capitals', () => {
+      controller.gameState.capitals = { A: 'red', C: 'blue', D: 'blue' }
+      controller.mapController.getTroopState('C')!.player = player1 // red captures C but not D
+
+      expect(controller.ownsAllCapitals('red')).toBe(false)
+    })
+
+    it('returns false when capital mode is inactive, even if capitals is populated', () => {
+      controller.gameState.capitalMode = false
+      controller.mapController.getTroopState('C')!.player = player1
+
+      expect(controller.ownsAllCapitals('red')).toBe(false)
+    })
+
+    it('returns false when capitals is empty', () => {
+      controller.gameState.capitals = {}
+      expect(controller.ownsAllCapitals('red')).toBe(false)
+    })
+  })
+
+  // --------------------------------------------------------
+  describe('resignation — foundational', () => {
+    describe('isResigned()', () => {
+      it('reflects resignedPlayers membership', () => {
+        expect(controller.isResigned('blue')).toBe(false)
+        controller.gameState.resignedPlayers.push('blue')
+        expect(controller.isResigned('blue')).toBe(true)
+      })
+    })
+
+    describe('getNextPlayer() skips resigned players', () => {
+      it('skips a resigned player exactly like an eliminated one', () => {
+        controller.gameState.resignedPlayers.push('blue')
+        // Only 'red' is left eligible (2-player map) -- getNextPlayer() wraps
+        // back to the current player rather than ever returning 'blue'.
+        expect(controller.getNextPlayer()).toBe('red')
+      })
+
+      it('skips both a resigned and an eliminated player seated between the current player and the only eligible one', () => {
+        const threePlayerController = new GameController(buildThreePlayerGameStateWithEliminatedMiddle())
+        threePlayerController.gameState.resignedPlayers.push('blue')
+
+        // Seating: red (current), green (eliminated), blue (resigned) -- only
+        // red remains eligible, so the skip-loop wraps back to red.
+        expect(threePlayerController.getNextPlayer()).toBe('red')
+      })
+    })
+
+    describe('startPlayerTurn() turnCount', () => {
+      it('increments turnCount by exactly 1 per call', () => {
+        expect(controller.gameState.turnCount).toBe(0)
+        controller.startPlayerTurn('blue')
+        expect(controller.gameState.turnCount).toBe(1)
+        controller.startPlayerTurn('red')
+        expect(controller.gameState.turnCount).toBe(2)
+      })
+    })
+
+    describe('recordKnockoutIfNeeded() (via resign())', () => {
+      it('writes a knockoutOrder entry once and never overwrites it on a second call for the same player', () => {
+        controller.resign('blue')
+        const firstSnapshot = controller.gameState.knockoutOrder.blue
+        expect(firstSnapshot).toBeDefined()
+
+        controller.gameState.turnCount += 5 // would change the snapshot if it were re-recorded
+        controller.resign('blue') // already resigned -- no-op per resign()'s own guard too
+
+        expect(controller.gameState.knockoutOrder.blue).toEqual(firstSnapshot)
+      })
+    })
+  })
+
+  // --------------------------------------------------------
+  describe('checkWinCondition() (via attack()/resign())', () => {
+    it('conquest mode: a capture leaving one player owning every non-frozen, non-resigned territory ends the game', () => {
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [], defenderDice: [] })
+      controller.attack(3, 'B', 'C')
+      expect(controller.gameState.gameOver).toBe(false)
+
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 2, attackerDice: [], defenderDice: [] })
+      controller.attack(2, 'C', 'D')
+
+      expect(controller.gameState.gameOver).toBe(true)
+    })
+
+    it('conquest mode: territory still split among owners does not end the game', () => {
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [], defenderDice: [] })
+      controller.attack(3, 'B', 'C')
+
+      expect(controller.gameState.gameOver).toBe(false)
+    })
+
+    it('capital mode: capturing every capital ends the game regardless of non-capital territory split', () => {
+      controller.gameState.capitalMode = true
+      controller.gameState.capitals = { A: 'red', C: 'blue' }
+
+      // Red captures C (blue's capital) but blue keeps D -- non-capital
+      // territory stays split, yet the game must still end.
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [], defenderDice: [] })
+      controller.attack(3, 'B', 'C')
+
+      expect(controller.gameState.gameOver).toBe(true)
+      expect(controller.mapController.getTerritoryOwner('D')).toBe('blue')
+    })
+
+    it('is a no-op once gameOver is already true, and the transfer guard skips even a capture that fully defeats a player', () => {
+      controller.gameState.gameOver = true
+      controller.gameState.playerCards.blue = [card('infantry', 'X')]
+
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [], defenderDice: [] })
+      controller.attack(3, 'B', 'C')
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 2, attackerDice: [], defenderDice: [] })
+      controller.attack(2, 'C', 'D') // fully defeats blue, but the game was already over throughout
+
+      expect(controller.gameState.gameOver).toBe(true)
+      expect(controller.hasPlayerLost('blue')).toBe(true)
+      // No transfer -- the game was already over, so this can't be "the winning move".
+      expect(controller.gameState.playerCards.blue).toHaveLength(1)
+    })
+
+    it('resignation alone (no capture) ends the game when it leaves a sole remaining active player', () => {
+      // Exactly 2 active players -- the second-to-last one resigning must
+      // immediately win the game for the sole remaining player.
+      controller.resign('blue')
+      expect(controller.gameState.gameOver).toBe(true)
+    })
+  })
+
+  // --------------------------------------------------------
+  describe('getWinner()', () => {
+    it('returns undefined (conquest mode) while territory is still split among owners', () => {
+      expect(controller.getWinner()).toBeUndefined()
+    })
+
+    it('returns the winning player (conquest mode) once they own every eligible territory, independent of gameOver', () => {
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [], defenderDice: [] })
+      controller.attack(3, 'B', 'C')
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 2, attackerDice: [], defenderDice: [] })
+      controller.attack(2, 'C', 'D')
+
+      expect(controller.getWinner()).toBe('red')
+
+      // Still correctly re-derivable even if something externally reset gameOver.
+      controller.gameState.gameOver = false
+      expect(controller.getWinner()).toBe('red')
+    })
+
+    it('returns undefined (capital mode) when no single player owns every capital', () => {
+      controller.gameState.capitalMode = true
+      controller.gameState.capitals = { A: 'red', C: 'blue' }
+
+      expect(controller.getWinner()).toBeUndefined()
+    })
+
+    it('returns the winning player (capital mode) once they own every capital', () => {
+      controller.gameState.capitalMode = true
+      controller.gameState.capitals = { A: 'red', C: 'blue' }
+
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [], defenderDice: [] })
+      controller.attack(3, 'B', 'C')
+
+      expect(controller.getWinner()).toBe('red')
+    })
+
+    it('returns the sole remaining active player (capital mode) once the only opponent resigns, even though their capital was never captured', () => {
+      // Regression test: resignation does not transfer capital ownership, so
+      // the mode-specific capital check alone would never fire here -- the
+      // "last active player standing" override is what must resolve this.
+      controller.gameState.capitalMode = true
+      controller.gameState.capitals = { A: 'red', C: 'blue' }
+
+      controller.resign('blue')
+
+      expect(controller.gameState.gameOver).toBe(true)
+      expect(controller.getWinner()).toBe('red')
+    })
+
+    it('returns the sole remaining active player (conquest mode) once the only opponent resigns', () => {
+      controller.resign('blue')
+
+      expect(controller.getWinner()).toBe('red')
+    })
+  })
+
+  // --------------------------------------------------------
+  describe('card transfer on elimination — win-move guard (013)', () => {
+    it('still transfers the full hand when a defeat does not end the game', () => {
+      const gs = buildGameState()
+      gs.playerConfigs = [player1, player2, player3]
+      // Reassign D from blue to green so blue's elimination alone does not
+      // leave a sole remaining owner -- the game must continue.
+      gs.troops.find(t => t.territory === 'D')!.player = player3
+      gs.playerCards = { red: [], blue: [card('infantry', 'X'), card('cavalry', 'Y')], green: [] }
+      const threePlayerController = new GameController(gs)
+
+      vi.spyOn(threePlayerController, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [], defenderDice: [] })
+      threePlayerController.attack(3, 'B', 'C') // red captures blue's only (last) territory
+
+      expect(threePlayerController.hasPlayerLost('blue')).toBe(true)
+      expect(threePlayerController.gameState.gameOver).toBe(false)
+      expect(threePlayerController.gameState.playerCards.red).toHaveLength(2)
+      expect(threePlayerController.gameState.playerCards.blue).toHaveLength(0)
+      expect(threePlayerController.gameState.knockoutOrder.blue).toBeDefined()
+    })
+
+    it('transfers no cards when the defeat is simultaneously the game-winning move', () => {
+      controller.gameState.playerCards.blue = [card('infantry', 'X'), card('cavalry', 'Y')]
+
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [], defenderDice: [] })
+      controller.attack(3, 'B', 'C')
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 2, attackerDice: [], defenderDice: [] })
+      controller.attack(2, 'C', 'D') // red now owns everything -- the winning move
+
+      expect(controller.gameState.gameOver).toBe(true)
+      expect(controller.gameState.playerCards.red).toHaveLength(0)
+      expect(controller.gameState.playerCards.blue).toHaveLength(2) // never transferred
+      expect(controller.gameState.knockoutOrder.blue).toBeDefined()
+    })
+  })
+
+  // --------------------------------------------------------
+  describe('resign()', () => {
+    it('leaves territories and troop counts completely unchanged at the moment of resignation', () => {
+      const territoriesBefore = controller.getPlayerTerritoryTotal('blue')
+      const troopsBefore = controller.getPlayerTroopTotal('blue')
+      const cCountBefore = controller.getTroopCount('C')
+      const dCountBefore = controller.getTroopCount('D')
+
+      controller.resign('blue')
+
+      expect(controller.getPlayerTerritoryTotal('blue')).toBe(territoriesBefore)
+      expect(controller.getPlayerTroopTotal('blue')).toBe(troopsBefore)
+      expect(controller.getTroopCount('C')).toBe(cCountBefore)
+      expect(controller.getTroopCount('D')).toBe(dCountBefore)
+      expect(controller.mapController.getTerritoryOwner('C')).toBe('blue')
+      expect(controller.mapController.getTerritoryOwner('D')).toBe('blue')
+    })
+
+    it('ends the current turn when the resigning player is currently mid-turn', () => {
+      expect(controller.gameState.currentPlayer).toBe('red')
+      controller.resign('red')
+
+      expect(controller.gameState.currentPlayer).toBe('blue')
+    })
+
+    it('leaves the current turn untouched when resigning off-turn', () => {
+      expect(controller.gameState.currentPlayer).toBe('red')
+      const phaseBefore = controller.gameState.currentPhase
+      const turnCountBefore = controller.gameState.turnCount
+
+      controller.resign('blue') // blue is not the current player
+
+      expect(controller.gameState.currentPlayer).toBe('red')
+      expect(controller.gameState.currentPhase).toBe(phaseBefore)
+      expect(controller.gameState.turnCount).toBe(turnCountBefore)
+    })
+
+    it('is never returned by getNextPlayer() afterward', () => {
+      controller.resign('blue')
+      expect(controller.getNextPlayer()).not.toBe('blue')
+    })
+
+    it('never has reinforcement calculated for them again (startPlayerTurn is never invoked for them)', () => {
+      controller.resign('red') // ends red's turn, hands off to blue
+      const spy = vi.spyOn(controller, 'startPlayerTurn')
+
+      controller.startNextPlayerTurn()
+
+      expect(spy).not.toHaveBeenCalledWith('red')
+    })
+
+    it('records a knockoutOrder entry immediately on resignation', () => {
+      expect(controller.gameState.knockoutOrder.blue).toBeUndefined()
+      controller.resign('blue')
+      expect(controller.gameState.knockoutOrder.blue).toBeDefined()
+      expect(controller.gameState.knockoutOrder.blue.playersRemaining).toBe(2)
+    })
+
+    it('transfers a resigned player\'s cards on their eventual defeat, without creating a second knockoutOrder entry', () => {
+      const gs = buildGameState()
+      gs.playerConfigs = [player1, player2, player3]
+      gs.troops.find(t => t.territory === 'D')!.player = player3
+      gs.playerCards = { red: [], blue: [card('infantry', 'X')], green: [] }
+      const threePlayerController = new GameController(gs)
+
+      threePlayerController.resign('blue')
+      const knockoutAtResignation = threePlayerController.gameState.knockoutOrder.blue
+      expect(threePlayerController.gameState.gameOver).toBe(false)
+
+      vi.spyOn(threePlayerController, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [], defenderDice: [] })
+      threePlayerController.attack(3, 'B', 'C') // red captures blue's last, resigned-held territory
+
+      expect(threePlayerController.hasPlayerLost('blue')).toBe(true)
+      expect(threePlayerController.gameState.playerCards.red).toHaveLength(1)
+      expect(threePlayerController.gameState.playerCards.blue).toHaveLength(0)
+      expect(threePlayerController.gameState.knockoutOrder.blue).toEqual(knockoutAtResignation)
+    })
+  })
+
+  // --------------------------------------------------------
+  describe('getStandings()', () => {
+    it('places the winner (re-derived via findConquestWinner()/findCapitalWinner()) at rank 1 with turnsAlive = turnCount, once gameOver', () => {
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [], defenderDice: [] })
+      controller.attack(3, 'B', 'C')
+      vi.spyOn(controller, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 2, attackerDice: [], defenderDice: [] })
+      controller.attack(2, 'C', 'D')
+
+      expect(controller.gameState.gameOver).toBe(true)
+      const standings = controller.getStandings()
+      expect(standings[0]).toMatchObject({ rank: 1, turnsAlive: controller.gameState.turnCount })
+      expect(standings[0].player.color).toBe('red')
+    })
+
+    it('returns only the still-alive tier before the game has ended (no winner tier yet)', () => {
+      // Neither player has been eliminated or resigned -- both fall in the
+      // "still alive" tier, ordered by troop count (red: 3+5=8, blue: 4+2=6).
+      const standings = controller.getStandings()
+      expect(standings).toHaveLength(2)
+      expect(standings.every(s => s.territories !== null)).toBe(true)
+      expect(standings.map(s => s.player.color)).toEqual(['red', 'blue'])
+    })
+
+    it('computes the full three-tier ranking: winner, still-alive non-winner (by troops), then defeated/resigned (by players-remaining-at-knockout)', () => {
+      const gs = new GameState()
+      gs.gameOver = true
+      gs.mapConfig = buildMinimalMapConfig()
+      gs.capitalMode = true
+      gs.capitals = { A: 'red', C: 'green' }
+      gs.playerConfigs = [player1, player2, player3, player4]
+      gs.troops = [
+        { territory: 'A', count: 5, player: player1 },
+        { territory: 'B', count: 3, player: player2 },
+        { territory: 'C', count: 2, player: player1 }, // captured from green
+        { territory: 'D', count: 4, player: player4 },
+      ]
+      gs.currentPlayer = 'red'
+      gs.currentPhase = 'attack'
+      gs.playerCards = { red: [], blue: [], green: [], purple: [] }
+      gs.resignedPlayers = ['purple']
+      gs.knockoutOrder = {
+        // purple resigned first, while all 4 players were still in.
+        purple: { playersRemaining: 4, turnAtKnockout: 2 },
+        // green was defeated later, once only 3 players remained (purple
+        // already recorded) -- ranks better than purple within this tier.
+        green: { playersRemaining: 3, turnAtKnockout: 5 },
+      }
+      gs.turnCount = 10
+
+      const standings = new GameController(gs).getStandings()
+
+      expect(standings.map(s => s.player.color)).toEqual(['red', 'blue', 'green', 'purple'])
+      expect(standings[0]).toMatchObject({ rank: 1, territories: 2, troops: 7, turnsAlive: 10 })
+      expect(standings[1]).toMatchObject({ rank: 2, territories: 1, troops: 3, turnsAlive: 10 })
+      expect(standings[2]).toMatchObject({ rank: 3, territories: null, troops: null, turnsAlive: 5 })
+      expect(standings[3]).toMatchObject({ rank: 4, territories: null, troops: null, turnsAlive: 2 })
+    })
+
+    it('orders still-alive non-winners by troop count descending, with a stable secondary order for ties', () => {
+      const gs = new GameState()
+      gs.gameOver = false
+      gs.mapConfig = buildMinimalMapConfig()
+      gs.playerConfigs = [player1, player2, player3]
+      gs.troops = [
+        { territory: 'A', count: 3, player: player1 },
+        { territory: 'B', count: 3, player: player2 }, // tied with player3's total
+        { territory: 'C', count: 3, player: player3 },
+        { territory: 'D', count: 10, player: player1 }, // red has the most troops overall
+      ]
+      gs.currentPlayer = 'red'
+      gs.currentPhase = 'attack'
+      gs.playerCards = { red: [], blue: [], green: [] }
+
+      const standings = new GameController(gs).getStandings()
+
+      expect(standings.map(s => s.player.color)).toEqual(['red', 'blue', 'green'])
+    })
+
+    it('ranks a resigned-then-later-defeated player once, by their resignation moment', () => {
+      const gs = buildGameState()
+      gs.playerConfigs = [player1, player2, player3]
+      gs.troops.find(t => t.territory === 'D')!.player = player3
+      gs.playerCards = { red: [], blue: [], green: [] }
+      const threePlayerController = new GameController(gs)
+
+      threePlayerController.resign('blue')
+      vi.spyOn(threePlayerController, 'attackRng').mockReturnValue({ attackerLosses: 0, defenderLosses: 4, attackerDice: [], defenderDice: [] })
+      threePlayerController.attack(3, 'B', 'C')
+
+      const standings = threePlayerController.getStandings()
+      const blueEntries = standings.filter(s => s.player.color === 'blue')
+      expect(blueEntries).toHaveLength(1)
+      expect(blueEntries[0].turnsAlive).toBe(threePlayerController.gameState.knockoutOrder.blue.turnAtKnockout)
     })
   })
 })

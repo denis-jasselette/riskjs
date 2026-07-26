@@ -19,15 +19,21 @@
     font-weight: 800;
   }
 
-  ellipse {
+  ellipse,
+  .CapitalMarker {
     stroke: white;
     stroke-width: 10px;
     stroke-dasharray: 30;
     fill: black;
   }
 
+  .CapitalMarker {
+    stroke-linejoin: round;
+  }
+
   @each $key, $color in colors.$troop-colors {
-    &[data-player-color="#{$key}"] ellipse {
+    &[data-player-color="#{$key}"] ellipse,
+    &[data-player-color="#{$key}"] .CapitalMarker {
       stroke-width: 2;
       stroke-dasharray: none;
       fill: $color;

@@ -8,6 +8,12 @@
 
 **Input**: User description: "Post-Conquest Troop Movement for RiskJS — after a successful attack conquers a territory, let the attacking player choose how many troops move from the source into the newly conquered territory, bounded between the dice count used in the winning roll (minimum) and leaving at least 1 troop behind in the source (maximum), defaulting to the maximum. Currently the engine automatically moves everyone over, leaving no choice. Separate from and doesn't consume the fortify-phase move (009). Interacts with, but doesn't modify, the online gameplay protocol (001) — flagged as a likely follow-up drift-fix there."
 
+## Clarifications
+
+### Session 2026-07-24
+
+- Q: When the minimum and maximum bounds are equal (only one valid troop amount), should the system still present an interactive choice UI (locked/disabled) or skip it and auto-confirm? → A: Skip the interactive UI entirely and auto-confirm the single valid amount without requiring player action.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Choose how many troops occupy a newly conquered territory (Priority: P1)
@@ -109,9 +115,10 @@ in, matching today's existing automatic behavior.
   mathematically never costs the attacker any losses in that same round, so
   the minimum can never exceed the maximum in practice; no fallback handling
   for a bounds conflict is needed.
-- What happens if the minimum and maximum bounds are equal (only one valid
-  amount) — is the choice simply presented with a single fixed value rather
-  than a range to adjust?
+- When the minimum and maximum bounds are equal (only one valid amount), the
+  system skips the interactive choice UI entirely and auto-confirms that
+  single amount without requiring player action, rather than presenting a
+  locked/disabled choice control.
 - What happens if the player attempts to end their attack phase or take
   another action while a troop-movement choice is still unresolved — is that
   action blocked until the choice is confirmed (consistent with User Story
@@ -123,7 +130,10 @@ in, matching today's existing automatic behavior.
 
 - **FR-001**: System MUST present the attacking player with a choice of how
   many troops to move into a territory immediately after their attack
-  successfully conquers it.
+  successfully conquers it, except when the minimum and maximum bounds
+  (FR-002, FR-003) are equal, in which case the system MUST skip the
+  interactive choice and auto-confirm that single valid amount without
+  requiring player action.
 - **FR-002**: The minimum selectable amount MUST equal the number of dice
   used in the winning (final, decisive) attack roll.
 - **FR-003**: The maximum selectable amount MUST leave at least 1 troop

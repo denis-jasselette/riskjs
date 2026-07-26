@@ -1,5 +1,6 @@
 import { WebSocket } from 'ws'
 
+import { ServerGameMessage } from '@/net/protocol/game'
 import { ServerMessage } from '@/net/protocol/lobby'
 
 export class Connection {
@@ -11,7 +12,7 @@ export class Connection {
     this.socket = socket
   }
 
-  send(message: ServerMessage): void {
+  send(message: ServerMessage | ServerGameMessage): void {
     if (this.socket.readyState !== WebSocket.OPEN) return
     this.socket.send(JSON.stringify(message))
   }

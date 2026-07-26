@@ -9,6 +9,7 @@ export type HandleStartParams = {
   blizzards: boolean
   fog: boolean
   cardBonus: CardBonusMode
+  capitalMode: boolean
 }
 
 export type GameOverProps = {
@@ -21,6 +22,7 @@ const GameOver = (props: GameOverProps) => {
   const cardBonusField = useRef<HTMLSelectElement>(null)
   const blizzardsField = useRef<HTMLInputElement>(null)
   const fogField = useRef<HTMLInputElement>(null)
+  const capitalModeField = useRef<HTMLInputElement>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -34,6 +36,7 @@ const GameOver = (props: GameOverProps) => {
       blizzards: blizzardsField.current!.checked,
       fog: fogField.current!.checked,
       cardBonus: cardBonusField.current!.value === 'Progressive' ? 'progressive' : 'fixed',
+      capitalMode: capitalModeField.current!.checked,
     }
     props.handleStart(params)
   }
@@ -92,6 +95,13 @@ const GameOver = (props: GameOverProps) => {
             <label className="form-label" htmlFor="fog">Fog of war</label>
             <label className="switch">
               <input ref={fogField} id="fog" type="checkbox" />
+              <span className="slider round"></span>
+            </label>
+          </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="capital_mode">Capital mode</label>
+            <label className="switch">
+              <input ref={capitalModeField} id="capital_mode" type="checkbox" />
               <span className="slider round"></span>
             </label>
           </div>

@@ -29,14 +29,26 @@ export interface ActionMenuProps {
   deployTroopCount?: number
   maxDeployTroops?: number
   onDeployTroopCountChange?: (count: number) => void
+  postConquestTroopCount?: number
+  onPostConquestTroopCountChange?: (count: number) => void
+  onPostConquestConfirm?: () => void
+  onResign?: () => void
 }
 
 const ActionMenu = (props: ActionMenuProps) => {
-  const { gameState } = useContext(GameContext)
+  const { gameState, viewingPlayer } = useContext(GameContext)
   const gameController = new GameController(gameState)
   const currentPlayerConfig = gameState.playerConfigs.find(x => x.color === gameState.currentPlayer)
   if (!currentPlayerConfig)
     return <></>
+
+  // Resignation is allowed at any time, regardless of whose turn it
+  // currently is (FR-008) -- gated only on the viewer not already being
+  // resigned, defeated, or the game having already ended.
+  const canResign = props.onResign !== undefined
+    && !gameState.gameOver
+    && !gameController.hasPlayerLost(viewingPlayer)
+    && !gameController.isResigned(viewingPlayer)
 
   const showDiceSelector = gameState.currentPhase === 'attack'
     && props.maxAttackDice !== undefined
@@ -58,6 +70,25 @@ const ActionMenu = (props: ActionMenuProps) => {
     && props.deployTroopCount !== undefined
     && props.onDeployTroopCountChange !== undefined
     && !gameController.hasForcedTradeIn()
+
+  const showCapitalPrompt = gameState.currentPhase === 'capitalDeploy'
+
+  // Post-conquest troop movement (024): shown whenever a choice is pending
+  // (only ever set during the attack phase -- see attack()'s conquest
+  // branch). The lower bound (minTroopsToMove) is read directly off the
+  // pending state; the upper bound is never stored, and is instead
+  // recomputed live from the two territories' current troop counts (their
+  // combined pool is fixed once combat ends -- only its split changes).
+  const pendingPostConquestMove = gameState.pendingPostConquestMove
+  const minPostConquestTroops = pendingPostConquestMove?.minTroopsToMove ?? 1
+  const maxPostConquestTroops = pendingPostConquestMove
+    ? gameController.getTroopCount(pendingPostConquestMove.sourceTerritory) + gameController.getTroopCount(pendingPostConquestMove.conqueredTerritory) - 1
+    : 1
+
+  const showPostConquestSelector = !!pendingPostConquestMove
+    && props.postConquestTroopCount !== undefined
+    && props.onPostConquestTroopCountChange !== undefined
+    && props.onPostConquestConfirm !== undefined
 
   const stopPropagation = <T extends { stopPropagation: () => void }>(e: T) => e.stopPropagation()
 
@@ -101,7 +132,71 @@ const ActionMenu = (props: ActionMenuProps) => {
         <div className={style.PhaseEndButton}>
           <PhaseEndButton currentPhase={gameState.currentPhase} handleClick={props.handleEndPhase} />
         </div>
+
+        {canResign && (
+          <div className={style.ResignButton}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                if (window.confirm('Are you sure you want to resign? Your territories stay on the board, but you\'ll never take another turn.'))
+                  props.onResign!()
+              }}
+            >
+              Resign
+            </button>
+          </div>
+        )}
       </div>
+
+      {showCapitalPrompt && (
+        <div className={style.CapitalPromptRow} onClick={stopPropagation}>
+          <span className={style.CapitalPromptLabel}>
+            {currentPlayerConfig.name}
+            , choose one of your territories as your capital
+          </span>
+        </div>
+      )}
+
+      {showPostConquestSelector && (
+        <div className={style.PostConquestSelectorRow} onClick={stopPropagation}>
+          <span className={style.PostConquestSelectorLabel}>Troops to move in:</span>
+          <div className={style.PostConquestStepper}>
+            <button
+              type="button"
+              className={style.PostConquestStepBtn}
+              disabled={props.postConquestTroopCount! <= minPostConquestTroops}
+              onClick={() => props.onPostConquestTroopCountChange!(props.postConquestTroopCount! - 1)}
+            >
+              −
+            </button>
+            <input
+              type="range"
+              className={style.PostConquestSlider}
+              style={{ background: sliderTrackFill(minPostConquestTroops, maxPostConquestTroops, props.postConquestTroopCount!) }}
+              min={minPostConquestTroops}
+              max={maxPostConquestTroops}
+              value={props.postConquestTroopCount}
+              onChange={e => props.onPostConquestTroopCountChange!(Number(e.target.value))}
+            />
+            <span className={style.PostConquestCount}>{props.postConquestTroopCount}</span>
+            <button
+              type="button"
+              className={style.PostConquestStepBtn}
+              disabled={props.postConquestTroopCount! >= maxPostConquestTroops}
+              onClick={() => props.onPostConquestTroopCountChange!(props.postConquestTroopCount! + 1)}
+            >
+              +
+            </button>
+          </div>
+          <button
+            type="button"
+            className={style.PostConquestConfirmBtn}
+            onClick={() => props.onPostConquestConfirm!()}
+          >
+            Confirm
+          </button>
+        </div>
+      )}
 
       {showFortifySelector && (
         <div className={style.FortifySelectorRow} onClick={stopPropagation}>

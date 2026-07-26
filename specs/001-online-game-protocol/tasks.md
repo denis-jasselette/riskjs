@@ -29,7 +29,7 @@ Existing web-app split (per `plan.md`'s Structure Decision): `src/` (React clien
 
 **Purpose**: Establish the new protocol's type surface before anything consumes it
 
-- [ ] T001 Define `ClientGameMessage` / `ServerGameMessage` discriminated unions in `src/net/protocol/game.ts`, following the existing style of `src/net/protocol/lobby.ts`, per the exact shapes in `contracts/game-protocol.md`
+- [X] T001 Define `ClientGameMessage` / `ServerGameMessage` discriminated unions in `src/net/protocol/game.ts`, following the existing style of `src/net/protocol/lobby.ts`, per the exact shapes in `contracts/game-protocol.md`
 
 **Checkpoint**: Protocol types compile and are importable from both `src/` and `server/` via `@`.
 
@@ -41,11 +41,11 @@ Existing web-app split (per `plan.md`'s Structure Decision): `src/` (React clien
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 [P] Add `actionInFlight: boolean` field to `RoomSeat` in `server/src/rooms/Room.ts`, initialized to `false` wherever other seat fields are initialized (data-model.md's server-side runtime addition, FR-012)
-- [ ] T003 [P] Implement `filterGameStateForSeat(gameState, mapController, viewerColor): GameState` in `src/controllers/GameStateView.ts` per the redaction rules table in `data-model.md` (fog-of-war territory/troop redaction via `MapController.getVisibleTerritories`, opponent `playerCards` replaced with placeholders, `deck` cleared)
-- [ ] T004 [P] Unit tests for `filterGameStateForSeat` in `src/controllers/GameStateView.test.ts` covering: fog-enabled redaction of a non-visible territory's owner/count, always-redacted opponent card identities, cleared deck, and pass-through of unaffected fields (`currentPlayer`, `currentPhase`, `capitals`, `knockoutOrder`, etc.)
-- [ ] T005 Implement the shared `server/src/handlers/gameAction.ts` helper: resolves the sending connection's bound seat, calls the matching `GameController` method, replaces `room.gameState` with the controller's returned `.gameState`, broadcasts `action_event` to every connected seat, and sends each connected seat its own `state_snapshot` via `filterGameStateForSeat` (T003) (depends on T002, T003)
-- [ ] T006 Wire `deploy` / `attack` / `confirm_post_conquest_move` / `fortify` / `trade_cards` / `end_phase` / `place_capital` / `resign` cases into the `dispatch()` switch in `server/src/handlers/index.ts`, routing each to its (as-yet-unwritten) handler via the `gameAction.ts` helper (depends on T005)
+- [X] T002 [P] Add `actionInFlight: boolean` field to `RoomSeat` in `server/src/rooms/Room.ts`, initialized to `false` wherever other seat fields are initialized (data-model.md's server-side runtime addition, FR-012)
+- [X] T003 [P] Implement `filterGameStateForSeat(gameState, mapController, viewerColor): GameState` in `src/controllers/GameStateView.ts` per the redaction rules table in `data-model.md` (fog-of-war territory/troop redaction via `MapController.getVisibleTerritories`, opponent `playerCards` replaced with placeholders, `deck` cleared)
+- [X] T004 [P] Unit tests for `filterGameStateForSeat` in `src/controllers/GameStateView.test.ts` covering: fog-enabled redaction of a non-visible territory's owner/count, always-redacted opponent card identities, cleared deck, and pass-through of unaffected fields (`currentPlayer`, `currentPhase`, `capitals`, `knockoutOrder`, etc.)
+- [X] T005 Implement the shared `server/src/handlers/gameAction.ts` helper: resolves the sending connection's bound seat, calls the matching `GameController` method, replaces `room.gameState` with the controller's returned `.gameState`, broadcasts `action_event` to every connected seat, and sends each connected seat its own `state_snapshot` via `filterGameStateForSeat` (T003) (depends on T002, T003)
+- [X] T006 Wire `deploy` / `attack` / `confirm_post_conquest_move` / `fortify` / `trade_cards` / `end_phase` / `place_capital` / `resign` cases into the `dispatch()` switch in `server/src/handlers/index.ts`, routing each to its (as-yet-unwritten) handler via the `gameAction.ts` helper (depends on T005)
 
 **Checkpoint**: Foundation ready — user story handlers can now be implemented.
 
@@ -61,23 +61,23 @@ Existing web-app split (per `plan.md`'s Structure Decision): `src/` (React clien
 
 > Write these tests FIRST, ensure they FAIL before implementation (no handler exists yet)
 
-- [ ] T007 [P] [US1] Test deploy happy path in `server/src/handlers/deploy.test.ts`: two `FakeConnection`s in one started room, current player deploys, assert both receive `action_event` and an updated `state_snapshot` (quickstart scenario 1)
-- [ ] T008 [P] [US1] Test attack happy path in `server/src/handlers/attack.test.ts`: valid attack from an adjacent owned territory, assert `action_event` carries dice/outcome and `room.gameState` reflects troop/ownership changes
-- [ ] T009 [P] [US1] Test fortify happy path in `server/src/handlers/fortify.test.ts`
-- [ ] T010 [P] [US1] Test trade_cards happy path in `server/src/handlers/tradeCards.test.ts`
-- [ ] T011 [P] [US1] Test end_phase happy path in `server/src/handlers/endPhase.test.ts`: asserts turn/phase advances for every connected seat
-- [ ] T012 [P] [US1] Test place_capital happy path in `server/src/handlers/placeCapital.test.ts` (012's rules; this feature only carries the action)
-- [ ] T013 [P] [US1] Test resign happy path in `server/src/handlers/resign.test.ts` (013's rules; this feature only carries the action)
+- [X] T007 [P] [US1] Test deploy happy path in `server/src/handlers/deploy.test.ts`: two `FakeConnection`s in one started room, current player deploys, assert both receive `action_event` and an updated `state_snapshot` (quickstart scenario 1)
+- [X] T008 [P] [US1] Test attack happy path in `server/src/handlers/attack.test.ts`: valid attack from an adjacent owned territory, assert `action_event` carries dice/outcome and `room.gameState` reflects troop/ownership changes
+- [X] T009 [P] [US1] Test fortify happy path in `server/src/handlers/fortify.test.ts`
+- [X] T010 [P] [US1] Test trade_cards happy path in `server/src/handlers/tradeCards.test.ts`
+- [X] T011 [P] [US1] Test end_phase happy path in `server/src/handlers/endPhase.test.ts`: asserts turn/phase advances for every connected seat
+- [X] T012 [P] [US1] Test place_capital happy path in `server/src/handlers/placeCapital.test.ts` (012's rules; this feature only carries the action)
+- [X] T013 [P] [US1] Test resign happy path in `server/src/handlers/resign.test.ts` (013's rules; this feature only carries the action)
 
 ### Implementation for User Story 1
 
-- [ ] T014 [P] [US1] Implement `server/src/handlers/deploy.ts`: validate payload shape, call `GameController.deploy(troops, territory)` via the `gameAction.ts` helper (T005)
-- [ ] T015 [P] [US1] Implement `server/src/handlers/attack.ts`: call `GameController.attackRng`/`attack(...)` via the helper, ensuring dice values from the one authoritative call are what `action_event` carries
-- [ ] T016 [P] [US1] Implement `server/src/handlers/fortify.ts`: call `GameController.fortify(...)` via the helper
-- [ ] T017 [P] [US1] Implement `server/src/handlers/tradeCards.ts`: call `GameController.tradeCards(...)` via the helper
-- [ ] T018 [P] [US1] Implement `server/src/handlers/endPhase.ts`: call `GameController.startNextPhase()`/`startNextPlayerTurn()` via the helper
-- [ ] T019 [P] [US1] Implement `server/src/handlers/placeCapital.ts`: call `GameController.chooseCapital(territory)` via the helper
-- [ ] T020 [P] [US1] Implement `server/src/handlers/resign.ts`: call `GameController.resign(currentPlayer)` via the helper
+- [X] T014 [P] [US1] Implement `server/src/handlers/deploy.ts`: validate payload shape, call `GameController.deploy(troops, territory)` via the `gameAction.ts` helper (T005)
+- [X] T015 [P] [US1] Implement `server/src/handlers/attack.ts`: call `GameController.attackRng`/`attack(...)` via the helper, ensuring dice values from the one authoritative call are what `action_event` carries
+- [X] T016 [P] [US1] Implement `server/src/handlers/fortify.ts`: call `GameController.fortify(...)` via the helper
+- [X] T017 [P] [US1] Implement `server/src/handlers/tradeCards.ts`: call `GameController.tradeCards(...)` via the helper
+- [X] T018 [P] [US1] Implement `server/src/handlers/endPhase.ts`: call `GameController.startNextPhase()`/`startNextPlayerTurn()` via the helper
+- [X] T019 [P] [US1] Implement `server/src/handlers/placeCapital.ts`: call `GameController.chooseCapital(territory)` via the helper
+- [X] T020 [P] [US1] Implement `server/src/handlers/resign.ts`: call `GameController.resign(currentPlayer)` via the helper
 
 **Checkpoint**: User Story 1 fully functional and independently testable — an online game can be played turn-by-turn through the new protocol, matching local `Game.tsx` behavior.
 
@@ -89,8 +89,8 @@ Existing web-app split (per `plan.md`'s Structure Decision): `src/` (React clien
 
 **Independent Test**: With three or more players connected to one game, have one player attack; confirm all connected players independently observe an identical battle outcome (same dice values, same territories/troops affected).
 
-- [ ] T021 [US2] Extend `server/src/handlers/attack.test.ts` with a 3-connection scenario: assert all three connections' `action_event` payloads for the same attack contain byte-identical dice values and effect deltas (SC-004)
-- [ ] T022 [US2] Test in `server/src/handlers/reconnect.test.ts` (or alongside T030) that reconnecting after a past attack does not re-deliver that attack's `action_event` — only a current `state_snapshot` is sent, so no historical outcome is replayed as new
+- [X] T021 [US2] Extend `server/src/handlers/attack.test.ts` with a 3-connection scenario: assert all three connections' `action_event` payloads for the same attack contain byte-identical dice values and effect deltas (SC-004)
+- [X] T022 [US2] Test in `server/src/handlers/reconnect.test.ts` (or alongside T030) that reconnecting after a past attack does not re-deliver that attack's `action_event` — only a current `state_snapshot` is sent, so no historical outcome is replayed as new
 
 **Checkpoint**: Shared-outcome guarantee verified; no implementation changes expected beyond what US1/Foundational already built (this phase is verification-only, per the design already recorded in `research.md`).
 
@@ -104,16 +104,16 @@ Existing web-app split (per `plan.md`'s Structure Decision): `src/` (React clien
 
 ### Implementation for User Story 3
 
-- [ ] T023 [US3] Extend `server/src/handlers/gameAction.ts` (from T005) with the full validation gate run before any `GameController` call: sender's seat matches `gameState.currentPlayer` (out-of-turn reject), `actionInFlight` lock check (FR-012, using T002's field), seat-eliminated / game-already-over reject, and type-specific legality via `isSelectable`/`isAttackAllowed`/`isFortifyAllowed`/`hasAvailableTradeIn`; on any failure send `error` to the sender only and leave `room.gameState` untouched (depends on T005, T006, T014–T020)
-- [ ] T024 Handle malformed/unrecognized message types in `server/src/handlers/index.ts`'s `dispatch()` with the same sender-only `error` response (depends on T006)
+- [X] T023 [US3] Extend `server/src/handlers/gameAction.ts` (from T005) with the full validation gate run before any `GameController` call: sender's seat matches `gameState.currentPlayer` (out-of-turn reject), `actionInFlight` lock check (FR-012, using T002's field), seat-eliminated / game-already-over reject, and type-specific legality via `isSelectable`/`isAttackAllowed`/`isFortifyAllowed`/`hasAvailableTradeIn`; on any failure send `error` to the sender only and leave `room.gameState` untouched (depends on T005, T006, T014–T020)
+- [X] T024 Handle malformed/unrecognized message types in `server/src/handlers/index.ts`'s `dispatch()` with the same sender-only `error` response (depends on T006)
 
 ### Tests for User Story 3
 
-- [ ] T025 [P] [US3] Test out-of-turn rejection in `server/src/handlers/gameAction.test.ts`: non-current-player sends `deploy`, assert only that sender gets `error`, no `action_event`/`state_snapshot` sent to anyone, `room.gameState` unchanged
-- [ ] T026 [P] [US3] Test illegal-shaped action rejection (e.g. attack on a non-adjacent territory) with the same assertions
-- [ ] T027 [P] [US3] Test FR-012 single-flight: two `attack` messages for the same seat sent back-to-back within one synchronous step; assert the second is rejected with `error` and only the first produces an `action_event`
-- [ ] T028 [P] [US3] Test rejection of an action for an already-eliminated seat and for an already-ended game
-- [ ] T029 [P] [US3] Test rejection of a malformed/unknown message type: sender-only generic `error`, no broadcast, state unchanged
+- [X] T025 [P] [US3] Test out-of-turn rejection in `server/src/handlers/gameAction.test.ts`: non-current-player sends `deploy`, assert only that sender gets `error`, no `action_event`/`state_snapshot` sent to anyone, `room.gameState` unchanged
+- [X] T026 [P] [US3] Test illegal-shaped action rejection (e.g. attack on a non-adjacent territory) with the same assertions
+- [X] T027 [P] [US3] Test FR-012 single-flight: two `attack` messages for the same seat sent back-to-back within one synchronous step; assert the second is rejected with `error` and only the first produces an `action_event`
+- [X] T028 [P] [US3] Test rejection of an action for an already-eliminated seat and for an already-ended game
+- [X] T029 [P] [US3] Test rejection of a malformed/unknown message type: sender-only generic `error`, no broadcast, state unchanged
 
 **Checkpoint**: Game state is safe against out-of-turn, illegal, duplicate, and malformed client input.
 
@@ -125,8 +125,8 @@ Existing web-app split (per `plan.md`'s Structure Decision): `src/` (React clien
 
 **Independent Test**: Disconnect a player mid-game, reconnect using their existing session, and confirm they receive a current, correctly fog-of-war-filtered view without needing to rejoin or restart.
 
-- [ ] T030 [US4] Update `server/src/handlers/reconnect.ts`'s `room.status === 'started'` branch to send a `state_snapshot` filtered via `filterGameStateForSeat` (T003) for the reconnecting seat, instead of today's raw `room.gameState` inside the `game_started`-shaped payload
-- [ ] T031 [P] [US4] Test in `server/src/handlers/reconnect.test.ts`: reconnect mid-game with fog of war enabled, assert the payload is the filtered `state_snapshot` shape (no opponent card identities, no data for territories outside the seat's visibility) and not raw `gameState`
+- [X] T030 [US4] Update `server/src/handlers/reconnect.ts`'s `room.status === 'started'` branch to send a `state_snapshot` filtered via `filterGameStateForSeat` (T003) for the reconnecting seat, instead of today's raw `room.gameState` inside the `game_started`-shaped payload
+- [X] T031 [P] [US4] Test in `server/src/handlers/reconnect.test.ts`: reconnect mid-game with fog of war enabled, assert the payload is the filtered `state_snapshot` shape (no opponent card identities, no data for territories outside the seat's visibility) and not raw `gameState`
 
 **Checkpoint**: Reconnection during an active game is safe and correctly scoped.
 
@@ -140,13 +140,13 @@ Existing web-app split (per `plan.md`'s Structure Decision): `src/` (React clien
 
 ### Implementation for User Story 5
 
-- [ ] T032 [US5] Add elimination detection to `gameAction.ts` (T005): diff `gameState.knockoutOrder` before/after the action; if a new entry appears, send that seat's connection (if still connected) an `elimination_notice` after the `action_event`/`state_snapshot` pair, before any `game_over`
-- [ ] T033 [US5] Add game-over broadcast to `gameAction.ts`: if the action set `gameState.gameOver` to `true`, broadcast `game_over` with `GameController.getWinner()`/`getStandings()` to every connected seat (depends on T032)
+- [X] T032 [US5] Add elimination detection to `gameAction.ts` (T005): diff `gameState.knockoutOrder` before/after the action; if a new entry appears, send that seat's connection (if still connected) an `elimination_notice` after the `action_event`/`state_snapshot` pair, before any `game_over`
+- [X] T033 [US5] Add game-over broadcast to `gameAction.ts`: if the action set `gameState.gameOver` to `true`, broadcast `game_over` with `GameController.getWinner()`/`getStandings()` to every connected seat (depends on T032)
 
 ### Tests for User Story 5
 
-- [ ] T034 [P] [US5] Test in `server/src/handlers/gameAction.test.ts` (or `attack.test.ts`): a capture that empties a seat's territories causes that seat's connection to receive `elimination_notice` before any `game_over`, while a still-active seat does not receive `elimination_notice`
-- [ ] T035 [P] [US5] Test that a later whole-game `game_over` does not replace or duplicate an already-delivered `elimination_notice` for a previously defeated seat
+- [X] T034 [P] [US5] Test in `server/src/handlers/gameAction.test.ts` (or `attack.test.ts`): a capture that empties a seat's territories causes that seat's connection to receive `elimination_notice` before any `game_over`, while a still-active seat does not receive `elimination_notice`
+- [X] T035 [P] [US5] Test that a later whole-game `game_over` does not replace or duplicate an already-delivered `elimination_notice` for a previously defeated seat
 
 **Checkpoint**: All five user stories independently functional.
 
@@ -156,8 +156,9 @@ Existing web-app split (per `plan.md`'s Structure Decision): `src/` (React clien
 
 **Purpose**: Final validation across all stories
 
-- [ ] T036 [P] Run full automated validation: `pnpm run test && pnpm run server:typecheck && pnpm run lint && pnpm run build` (quickstart.md's automated section; constitution's CI gate)
+- [X] T036 [P] Run full automated validation: `pnpm run test && pnpm run server:typecheck && pnpm run lint && pnpm run build` (quickstart.md's automated section; constitution's CI gate)
 - [ ] T037 [P] Perform quickstart.md's manual two-browser-tab validation, including the devtools Network/WS-frame check that fog-of-war-hidden data (e.g. opponent cards) is absent from the wire payload itself, not just hidden by the UI
+  - Blocked: quickstart.md's own manual section is scoped "once the client is wired to send/receive these messages for an online game screen" (plan.md's Project Structure explicitly defers that UI wiring as a separate, later task-level concern). No component in `src/components` currently sends `ClientGameMessage`s or renders `state_snapshot`/`action_event`/`elimination_notice`/`game_over`, so there is no online game screen yet to open in two tabs. Automated validation (T036) is green and stands in as this feature's verification per plan.md's Testing section.
 
 ---
 

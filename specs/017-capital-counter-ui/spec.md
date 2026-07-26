@@ -8,6 +8,12 @@
 
 **Input**: User description: "Capital Counter UI for RiskJS — a single, global, display-only indicator visible only in capital-mode games, showing the highest number of capitals currently owned by any one player, out of the total capitals in the game (e.g. 'Leader: 3/6'), updating immediately whenever that maximum changes. Deliberately anonymized (never reveals which player holds the lead) — a controlled hint through fog of war. Hidden for the first 3 rounds after the capital-placement round, during which a simple round counter ('Round: 2') is shown instead. Surfaces data already tracked by Capital Mode (012); does not compute or change anything."
 
+## Clarifications
+
+### Session 2026-07-25
+
+- Q: Should a resigned player's capital count toward the "highest capitals owned by any one player" leader calculation, given spec 013 says resigned players keep their territories (including capitals) until eventually defeated? → A: Include them — the leader count is a pure, mechanical reflection of current board ownership, and resigned players still own their territories per 013.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See a round counter early in the game (Priority: P1)
@@ -105,7 +111,10 @@ immediately without identifying who now holds the lead.
 - **FR-003**: Starting with the fourth round following the
   capital-placement round, system MUST display a single, global count of
   the highest number of capitals currently owned by any one player, out of
-  the total number of capitals in the game.
+  the total number of capitals in the game. This calculation MUST include
+  resigned players' currently-owned capitals on equal footing with active
+  players' — resignation does not exclude a player's board state from the
+  leader calculation.
 - **FR-004**: Once the leader capital count begins being displayed, system
   MUST NOT revert to displaying the round counter for the remainder of the
   game.

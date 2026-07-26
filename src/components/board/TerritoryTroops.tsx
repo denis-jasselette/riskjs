@@ -37,6 +37,7 @@ export const TerritoryTroops = () => {
               width={troopSize}
               label={isInFog ? '?' : undefined}
               isInFog={isInFog}
+              isCapital={gameController.mapController.isTerritoryCapital(territory)}
             />
           </g>
         )

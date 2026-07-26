@@ -149,7 +149,7 @@ export default class GameLogic {
     return deck
   }
 
-  static initState(mapConfig: MapConfig, playerConfigs: PlayerConfig[], blizzardsEnabled: boolean, gameOver: boolean = false, fogEnabled: boolean = false, cardBonusMode: CardBonusMode = 'fixed'): GameState {
+  static initState(mapConfig: MapConfig, playerConfigs: PlayerConfig[], blizzardsEnabled: boolean, gameOver: boolean = false, fogEnabled: boolean = false, cardBonusMode: CardBonusMode = 'fixed', capitalModeEnabled: boolean = false): GameState {
     const [troops, blizzards] = this.autoSetupTroops(mapConfig, playerConfigs, blizzardsEnabled)
 
     const playerCards: Record<string, Card[]> = {}
@@ -165,6 +165,12 @@ export default class GameLogic {
       blizzards: blizzards,
       currentPlayer: playerConfigs[0].color,
       currentPhase: 'deploy',
+      capitalMode: capitalModeEnabled,
+      capitals: {},
+      roundsSincePlacement: 0,
+      resignedPlayers: [],
+      knockoutOrder: {},
+      turnCount: 0,
       fogEnabled: fogEnabled,
       troopsToDeploy: 0,
       deck: this.buildCardDeck(mapConfig),
@@ -172,9 +178,20 @@ export default class GameLogic {
       conqueredTerritoryThisTurn: false,
       tradeCount: 0,
       cardBonusMode: cardBonusMode,
+      pendingPostConquestMove: null,
     }
     if (gameOver)
       return state
+
+    // Capital mode inserts a one-time round-1 placement step before normal
+    // play begins: stop here with currentPhase 'capitalDeploy' rather than
+    // calling startPlayerTurn (which sets troopsToDeploy via
+    // calculateReinforcement) -- that only makes sense once every player has
+    // a capital. chooseCapital() calls startPlayerTurn once placement completes.
+    if (capitalModeEnabled) {
+      state.currentPhase = 'capitalDeploy'
+      return state
+    }
 
     return new GameController(state).startPlayerTurn(playerConfigs[0].color).gameState
   }
